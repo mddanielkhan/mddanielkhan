@@ -194,8 +194,25 @@ export const ERRORS: Record<string, string> = {
   server_error: "Something went wrong on our side. Please try again.",
 };
 
+/** Human labels for validation errors. Only known fields are named — URL codes can't inject arbitrary words. */
+const FIELD_LABELS: Record<string, string> = {
+  email: "Email", username: "Username", displayName: "Display name", password: "Password", current: "Current password",
+  title: "Title", body: "Details", topicId: "Topic", type: "Type", tags: "Tags", orgName: "Organisation", officialUrl: "Official link",
+  deadline: "Deadline", involvesFee: "Fee", sources: "Official sources", subject: "Subject", message: "Prepared questions", times: "Proposed times",
+  headline: "Headline", credentials: "Experience and credentials", evidenceLinks: "Evidence links", scopeStatement: "Scope of advice",
+  conflictOfInterest: "Conflict of interest", weeklyCapacity: "Sessions per week", topicIds: "Topics", agreeMentorCode: "Mentor code",
+  code: "Verification code", token: "Link", details: "Details", reason: "Reason", url: "Link", contact: "Your email", goodFaith: "Good-faith confirmation",
+  statement: "Appeal statement", comment: "Comment", note: "Note", publicReason: "Message to the member", domain: "Domain",
+  linkedinUrl: "LinkedIn", websiteUrl: "Website", confirm: "Confirmation", adult: "Age confirmation", accept: "Terms acceptance",
+  meetingUrl: "Meeting link", slot: "Time", helpfulness: "Helpfulness", knowledge: "Knowledge", respect: "Respect", durationMin: "Duration",
+  description: "Description", bio: "About you", institution: "Institution", fieldOfStudy: "Field of study", location: "Location", languages: "Languages",
+};
+
 export function errorMessage(code: string): string {
   if (ERRORS[code]) return ERRORS[code]!;
-  if (code.startsWith("invalid_")) return `Please check the "${code.slice(8).replace(/[^a-zA-Z]/g, " ").trim()}" field and try again.`;
+  if (code.startsWith("invalid_")) {
+    const label = FIELD_LABELS[code.slice(8)];
+    return label ? `Please check the "${label}" field and try again.` : "Please check the form and try again.";
+  }
   return ERRORS.server_error!;
 }

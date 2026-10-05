@@ -59,7 +59,8 @@ export const username = z
   .trim()
   .toLowerCase()
   .regex(/^[a-z0-9_]{3,24}$/, "3–24 characters: lowercase letters, numbers, underscore")
-  .refine((u) => !RESERVED_USERNAMES.has(u) && !/^(?:shikor|admin|mod|support|official)/.test(u), "This username is reserved");
+  // Prefix rules are narrow on purpose: "mod_x" is reserved, but Bangla names like "modhu" or "moduli" are not.
+  .refine((u) => !RESERVED_USERNAMES.has(u) && !/^(?:shikor|admin|support|official)|^mod(?:erator)?(?:[_\d]|$)/.test(u), "This username is reserved");
 
 /** Display names must not impersonate staff or carry badge-like symbols (an impersonation vector). */
 const IMPERSONATION = /\b(?:official|verified|admin|administrator|moderator|support|staff|shikor team|customer care)\b|শিকড় টিম|অফিসিয়াল/iu;

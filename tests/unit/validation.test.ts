@@ -46,6 +46,9 @@ describe("identity fields", () => {
     expect(username.safeParse("admin").success).toBe(false);
     expect(username.safeParse("shikor_support").success).toBe(false);
     expect(username.safeParse("Rafi_RUET").data).toBe("rafi_ruet");
+    expect(username.safeParse("mod_team").success).toBe(false);
+    expect(username.safeParse("moderator1").success).toBe(false);
+    expect(username.safeParse("modhumita").success).toBe(true);
     expect(displayName.safeParse("Official Shikor Support").success).toBe(false);
     expect(displayName.safeParse("Rafi ✔").success).toBe(false);
     expect(displayName.safeParse("রাফি আহমেদ").success).toBe(true);
@@ -66,5 +69,14 @@ describe("identity fields", () => {
   it("accepts 1–3 proposed times from the booking form", () => {
     const r = bookingRequestSchema.safeParse({ offeringId: "00000000-0000-4000-8000-000000000000", subject: "Help with SOP", message: "x".repeat(50), times: ["2026-10-10T10:00", "", ""] });
     expect(r.success).toBe(true);
+  });
+});
+
+describe("error messages from URL codes", () => {
+  it("names only known fields and never echoes arbitrary words", async () => {
+    const { errorMessage } = await import("@/lib/i18n/messages");
+    expect(errorMessage("invalid_email")).toBe('Please check the "Email" field and try again.');
+    expect(errorMessage("invalid_Your account is hacked call support")).toBe("Please check the form and try again.");
+    expect(errorMessage("totally_unknown")).toMatch(/Something went wrong/);
   });
 });

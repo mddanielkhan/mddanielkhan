@@ -1,9 +1,19 @@
-// Bundle the worker into dist/worker.mjs (dependencies stay external; resolved from node_modules at runtime).
+// Bundle the worker and operational scripts into dist/*.mjs (dependencies stay external,
+// resolved from node_modules at runtime). These ship in the production image so ops
+// tasks run with plain `node`, no TypeScript toolchain on the server.
 import { build } from "esbuild";
 
+const entries = {
+  worker: "src/worker.ts",
+  "create-admin": "scripts/create-admin.ts",
+  seed: "scripts/seed.ts",
+  "verify-audit-chain": "scripts/verify-audit-chain.ts",
+};
+
 await build({
-  entryPoints: ["src/worker.ts"],
-  outfile: "dist/worker.mjs",
+  entryPoints: entries,
+  outdir: "dist",
+  outExtension: { ".js": ".mjs" },
   bundle: true,
   platform: "node",
   target: "node22",

@@ -49,6 +49,7 @@ type Auth =
   | { kind: "authenticated" }
   | { kind: "policy"; action: Action; context?: (actor: NonNullable<Actor>) => Promise<PolicyContext> | PolicyContext };
 
+/** `ip` here is the keyed HMAC of the client IP (never the raw address). */
 type RateSpec = (c: { actor: Actor; ip: string | null; input: unknown }) => Array<[RatePolicy, string | null | undefined]>;
 
 export type RouteDefinition<S extends z.ZodType> = {
@@ -90,7 +91,8 @@ export function defineRoute<S extends z.ZodType>(def: RouteDefinition<S>) {
         const token = (typeof raw[CSRF_FIELD] === "string" ? (raw[CSRF_FIELD] as string) : null) ?? req.headers.get("x-csrf-token");
         if (!verifyCsrfToken(seed, token)) throw new AppError("csrf_failed", 403);
 
-        const flood = await consume(POLICIES.mutationIp, ip ?? "unknown-ip");
+        // Rate-limit keys use the keyed IP hash: raw IPs are never persisted, not even for a minute.
+        const flood = await consume(POLICIES.mutationIp, ipHash ?? "unknown-ip");
         if (!flood.ok) throw new AppError("rate_limited", 429);
       } else {
         raw = Object.fromEntries(req.nextUrl.searchParams.entries());
@@ -112,7 +114,7 @@ export function defineRoute<S extends z.ZodType>(def: RouteDefinition<S>) {
         throw new AppError(`invalid_${String(first?.path[0] ?? "input")}`, 400, first?.message);
       }
 
-      for (const [policy, subject] of def.rate?.({ actor, ip, input: parsed.data }) ?? []) {
+      for (const [policy, subject] of def.rate?.({ actor, ip: ipHash, input: parsed.data }) ?? []) {
         if (!subject) continue;
         const r = await consume(policy, subject);
         if (!r.ok) throw new AppError("rate_limited", 429);

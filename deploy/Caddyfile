@@ -15,8 +15,5 @@
 	reverse_proxy app:3000 {
 		header_up X-Forwarded-Proto https
 	}
-	log {
-		output stdout
-		format json
-	}
+	# No access log: it would persist raw client IPs (data minimisation). The app logs errors with request ids.
 }
