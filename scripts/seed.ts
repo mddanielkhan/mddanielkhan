@@ -7,6 +7,7 @@
  *   mentor@shikor.local  (verified mentor; TOTP secret printed below)
  *   student@shikor.local (member)
  */
+import "@/lib/cli/load-env"; // must stay first: loads .env before any module reads config
 import { eq, sql } from "drizzle-orm";
 import { db, closeDb } from "@/lib/db/client";
 import { answers, badges, bookings, feedback, mentorProfiles, mentorTopics, notifications, offerings, posts, profiles, reports, topics, users, votes } from "@/lib/db/schema";

@@ -1,6 +1,6 @@
 # Setup — from your laptop to a production launch
 
-This guide has three parts. Part A gets the app running on your computer in about 15 minutes. Part B deploys it to
+This guide has three parts. Part A gets the app running on your computer in about 5 minutes. Part B deploys it to
 production on a small VPS behind Cloudflare, for roughly $10–25 a month. Part C is the checklist to complete before
 inviting real students.
 
@@ -10,48 +10,77 @@ inviting real students.
 
 ### A1. Requirements
 
-- Node.js **22** (see `.nvmrc`) and npm 10+
-- PostgreSQL **16 or 17**: via Docker (`docker compose up -d`) or a local install
-- Git
+| Tool | Version | Notes |
+|---|---|---|
+| Node.js | **22.12+** (LTS, see `.nvmrc`) or 24+ | `node --version` |
+| npm | 10+ | ships with Node |
+| Docker | Desktop or Engine with Compose v2 | Recommended: runs PostgreSQL and Mailpit for you |
+| PostgreSQL | **16+** | Only if you don't use Docker |
+| Git | any recent | |
 
-### A2. First run
+### A2. Quick start (about 5 minutes)
 
 ```bash
 git clone <your repo> shikor && cd shikor
-npm ci                                   # exact, locked dependencies
-cp .env.example .env
-# Generate two DIFFERENT secrets and paste them into .env:
-openssl rand -hex 32   # → APP_SECRET
-openssl rand -hex 32   # → ENCRYPTION_KEY
-
-docker compose up -d                     # Postgres on :5432, Mailpit (email catcher) on :8025
-npm run db:migrate                       # create the schema
-npm run db:seed                          # topics + demo data (prints demo TOTP secrets)
-npm run dev                              # http://localhost:3000
+npm ci              # exact, locked dependencies
+npm run setup       # configuration, database, demo data — one command
+npm run dev         # http://localhost:3000
 ```
 
-Without Docker, create the databases yourself:
-`createdb shikor && createdb shikor_test && createdb shikor_e2e`.
+`npm run setup` is safe to run as often as you like. It:
 
-**Demo accounts** (password `demo passphrase for local dev` for all of them):
+1. **Checks prerequisites:** the Node version, and that `.env` is git-ignored (it stops if not).
+2. **Creates `.env`** from `.env.example` with two fresh, independent 256-bit secrets, readable only by you
+   (mode `600`). It never overwrites an existing `.env` or its secrets, and never prints them.
+3. **Starts PostgreSQL and Mailpit** with Docker Compose, if Docker is running. A newly created `.env` then sends
+   email to Mailpit.
+4. **Waits for the database**, applies migrations, and **creates the demo community** once.
+5. **Checks that existing data matches your keys:** if the database was seeded with a different `ENCRYPTION_KEY`,
+   it stops and tells you how to fix it, instead of letting 2FA sign-in fail later.
+6. **Prints what you need next:** URLs, demo accounts, and QR codes for the demo mentor's and moderator's 2FA.
 
-| Email | Role | Notes |
+| Flag | Use it when |
+|---|---|
+| `npm run setup -- --no-docker` | You run your own PostgreSQL. Set `DATABASE_URL` in `.env` first. |
+| `npm run setup -- --no-seed` | You want an empty database (schema only). |
+| `npm run setup -- --reset` | You want to wipe the **local** database and start over (refuses non-localhost databases). |
+
+**Without Docker:** install PostgreSQL 16+, then create the databases and run setup:
+
+```bash
+createuser --pwprompt shikor          # password: shikor (or change DATABASE_URL in .env)
+createdb -O shikor shikor && createdb -O shikor shikor_test && createdb -O shikor shikor_e2e
+npm run setup -- --no-docker
+```
+
+### A3. Demo accounts
+
+Every demo account uses the password `demo passphrase for local dev`.
+
+| Email | Role | Sign-in |
 |---|---|---|
-| `admin@shikor.local` | Admin | 2FA on. Add the TOTP secret printed by the seed to an authenticator app |
-| `mentor@shikor.local` | Verified mentor | 2FA on (secret printed by the seed) |
-| `student@shikor.local` | Member | |
-| `helper@shikor.local` | Member | |
+| `student@shikor.local` | Student (Rafi) | Password only |
+| `mentor@shikor.local` | Verified mentor (Nusrat) | Password + 2FA. Scan the QR code setup printed. |
+| `admin@shikor.local` | Admin / moderator | Password + 2FA. Scan the QR code setup printed. |
+| `helper@shikor.local` | Member (Tanvir) | Password only |
 
-Email in development: `EMAIL_TRANSPORT=console` prints messages to the terminal. To see real rendered mail, set
-`EMAIL_TRANSPORT=smtp` and `SMTP_URL=smtp://localhost:1025`, then open Mailpit at <http://localhost:8025>.
+The other seeded people (other mentors, applicants and a scam account) exist to fill the community and moderation
+queues. Their 2FA keys are random and never shown, so use the accounts above to sign in. Lost the QR codes? Run
+`npm run setup -- --reset`.
 
-Background jobs: with `JOBS_INLINE=true` (dev default) emails send immediately. To exercise the real worker, set it to
-`false` and run `npm run worker:dev` in a second terminal.
+### A4. Email and background jobs
 
-### A3. Everyday commands
+- **Email:** with Docker, setup routes mail to **Mailpit** at <http://localhost:8025>. Without Docker,
+  `EMAIL_TRANSPORT=console` prints each email, including verification links, in the `npm run dev` terminal.
+- **Background jobs:** `JOBS_INLINE=true` (the development default) runs jobs immediately. To exercise the real
+  worker, set it to `false` and run `npm run worker:dev` in a second terminal.
+
+### A5. Everyday commands
 
 | Command | What it does |
 |---|---|
+| `npm run setup` | Configure and prepare everything (idempotent) |
+| `npm run doctor` | Check configuration, secrets, database, migrations, audit chain and email |
 | `npm run dev` | Dev server with hot reload |
 | `npm run check` | Lint + typecheck + unit tests (run before every commit) |
 | `npm run test:integration` | Service tests against real Postgres (`shikor_test`) |
@@ -62,12 +91,29 @@ Background jobs: with `JOBS_INLINE=true` (dev default) emails send immediately. 
 | `npm run admin:create` | Bootstrap the first admin (prints a one-time password) |
 | `npm run audit:verify` | Recompute the audit-log hash chain |
 
-### A4. Project map
+Every script reads `.env` the same way the app does, so the app, the worker and the scripts always share one
+configuration.
+
+### A6. Troubleshooting
+
+| Symptom | Cause and fix |
+|---|---|
+| `Docker not available` during setup | The Docker daemon isn't running. Start Docker Desktop, or use your own PostgreSQL with `--no-docker`. |
+| `Could not connect to the database` | PostgreSQL isn't reachable at `DATABASE_URL`. With Docker run `docker compose up -d`; otherwise start your local server. |
+| `port is already allocated` (5432) | Another PostgreSQL is running. Stop it, or use it with `--no-docker`. |
+| `This database was set up with a different ENCRYPTION_KEY` | The data was created under other keys. Locally: `npm run setup -- --reset`. Real data: restore the original key. |
+| `Invalid environment configuration` | A value in `.env` is malformed. The message names the key (never the value). `npm run doctor` explains it. |
+| 2FA code rejected | Turn on automatic time in your phone settings, or wait for the next code: a code can be used only once. |
+| `APP_SECRET/ENCRYPTION_KEY are not set` warning | There's no `.env`, so built-in development keys are in use. Run `npm run setup`. |
+
+### A7. Project map
 
 ```
 src/
   app/                 pages (server components) and api/**/route.ts handlers
-  components/          UI building blocks (no client JS needed)
+  app/globals.css      design tokens (light + dark) and component classes
+  components/          server-rendered UI: ui.tsx primitives, icons, header/footer, cards
+  components/client/   the only client code: active nav links and menu behaviour
   proxy.ts             CSP nonce + CSRF seed (never an auth gate)
   worker.ts            background jobs + scheduled maintenance
   lib/
@@ -80,13 +126,15 @@ src/
     content/ booking/ mentors/ moderation/ reports/ account/   domain services
     audit/             hash-chained audit log
     db/                Drizzle schema + client
+    cli/               shared helpers for scripts (.env loading, terminal output)
+scripts/               setup, doctor, migrate, seed, create-admin, verify-audit-chain
 drizzle/               SQL migrations (forward-only)
 tests/unit|integration|e2e
 deploy/                Dockerfile, production compose, Caddy, Postgres roles, backups, firewall
 docs/                  blueprint, setup, operations, ADRs
 ```
 
-### A5. Rules for changing code
+### A8. Rules for changing code
 
 1. **New route?** Use `defineRoute({ auth: …, schema: …, handler })`. The route-coverage test fails otherwise.
 2. **New permission?** Add an `Action` to `policy.ts`, cover it in `tests/unit/security.test.ts`, and call
@@ -204,7 +252,12 @@ OWNER_URL="postgres://shikor_owner:$OWNER_DB_PASSWORD@postgres:5432/shikor"
 $COMPOSE run --rm -e DATABASE_URL="$OWNER_URL" app node dist/seed.mjs --topics-only
 $COMPOSE run --rm -e DATABASE_URL="$OWNER_URL" -e ADMIN_EMAIL=you@your-domain.example -e ADMIN_USERNAME=founder app node dist/create-admin.mjs
 $COMPOSE run --rm app node dist/verify-audit-chain.mjs   # → "audit chain intact"
+$COMPOSE run --rm app node dist/doctor.mjs               # → "All checks passed"
 ```
+
+`doctor` is read-only and never prints secret values. It fails if the app connects as a privileged database role,
+if secrets are missing, if migrations are pending, if the audit chain is broken, or if the SMTP server rejects the
+connection. Run it after every deploy.
 
 Then log in, **change the printed one-time password, and enable 2FA** (Settings → Security). Staff powers stay locked
 until 2FA is verified in the session. Promote further moderators from `/mod/users` (admin only).
@@ -243,6 +296,7 @@ cd /opt/shikor && git pull
 docker build -f deploy/Dockerfile -t shikor:$(git rev-parse --short HEAD) -t shikor:latest .
 docker compose -f deploy/docker-compose.prod.yml --env-file /etc/shikor/shikor.env up -d   # migrate runs first
 curl -fsS https://your-domain.example/api/health
+docker compose -f deploy/docker-compose.prod.yml --env-file /etc/shikor/shikor.env run --rm app node dist/doctor.mjs
 ```
 
 Rollback: `docker tag shikor:<previous-sha> shikor:latest && docker compose ... up -d`. Migrations are forward-only and
@@ -263,6 +317,7 @@ backwards-compatible, so the previous image keeps working.
 - [ ] `/etc/shikor/shikor.env` is mode 600; secrets generated fresh; never reused from staging
 - [ ] 2FA on every infrastructure account; SSH keys only
 - [ ] App runs as `shikor_app` (`docker compose exec postgres psql -U postgres -c "\du"`)
+- [ ] `node dist/doctor.mjs` reports **All checks passed** on the production host
 - [ ] `https://your-domain/.well-known/security.txt` correct; `SECURITY.md` email works
 - [ ] Response headers checked (securityheaders.com shows A+); no CSP errors in the browser console
 - [ ] CI green on the deployed commit (lint, typecheck, tests, coverage, build, E2E, audit)

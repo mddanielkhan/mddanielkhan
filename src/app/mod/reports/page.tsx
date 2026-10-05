@@ -3,9 +3,9 @@ import { requirePermission } from "@/lib/auth/current";
 import { openReports } from "@/lib/moderation/service";
 import { REASON_LABELS, SLA_HOURS } from "@/lib/reports/service";
 import { ActionButton, Form } from "@/components/form";
-import { ModNav } from "@/components/mod-nav";
 import { UserActionForm } from "@/components/user-action-form";
-import { Card, EmptyState, Flash, PageHeader, Pill, formatDateTime } from "@/components/ui";
+import { EmptyState, Flash, PageHeader, Pill, formatDateTime } from "@/components/ui";
+import { CircleCheck, Clock, Icon, Trash } from "@/components/icons";
 import type { SearchParams } from "@/lib/http/page";
 
 export const metadata = { title: "Reports", robots: { index: false } };
@@ -16,59 +16,89 @@ function targetLink(type: string, id: string) {
   return null;
 }
 
+const LANE_TONE = { 0: "danger", 1: "warn", 2: "info", 3: "neutral" } as const;
+
 export default async function ReportsPage({ searchParams }: { searchParams: SearchParams }) {
   await requirePermission("staff.moderate", "/mod/reports");
   const rows = await openReports();
   return (
     <>
       <PageHeader title="Reports" subtitle="Ordered by priority, then age. Self-harm reports: contact the member privately with support resources — never take enforcement action." />
-      <ModNav current="reports" />
       <Flash searchParams={await searchParams} />
-      {rows.length === 0 ? <EmptyState title="No open reports" /> : null}
-      <div className="space-y-3">
+      {rows.length === 0 ? (
+        <EmptyState title="No open reports" icon={CircleCheck}>
+          Everything reported has been handled.
+        </EmptyState>
+      ) : null}
+      <div className="space-y-4">
         {rows.map(({ report: r, targetUser, ageHours }) => {
           const ageH = Number(ageHours);
-          const breached = ageH > (SLA_HOURS[r.priority] ?? 48);
+          const sla = SLA_HOURS[r.priority] ?? 48;
+          const breached = ageH > sla;
           const link = targetLink(r.targetType, r.targetId);
           return (
-            <Card key={r.id}>
-              <div className="mb-1 flex flex-wrap items-center gap-2 text-xs">
-                <Pill tone={r.priority === 0 ? "danger" : r.priority === 1 ? "warn" : "neutral"}>P{r.priority}</Pill>
-                <Pill>{REASON_LABELS[r.reason]}</Pill>
-                {breached ? <Pill tone="danger">SLA breached ({Math.round(ageH)}h)</Pill> : <span className="muted">{Math.round(ageH * 10) / 10}h old</span>}
-                <span className="muted">
-                  {r.targetType} · {r.reporterId ? `member report (weight ${r.weight})` : r.reporterContact ? "public notice" : "automatic"} · {formatDateTime(r.createdAt)}
-                </span>
+            <article key={r.id} className={`card overflow-hidden ${r.priority === 0 ? "border-[var(--color-danger-line)]" : ""}`}>
+              <div className="p-5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Pill tone={LANE_TONE[r.priority as 0 | 1 | 2 | 3] ?? "neutral"}>P{r.priority}</Pill>
+                  <Pill>{REASON_LABELS[r.reason]}</Pill>
+                  {breached ? (
+                    <Pill tone="danger" icon={Clock}>
+                      Over target by {Math.round(ageH - sla)}h
+                    </Pill>
+                  ) : (
+                    <span className="flex items-center gap-1 text-xs text-muted">
+                      <Icon icon={Clock} className="h-3.5 w-3.5" />
+                      {Math.round(ageH * 10) / 10}h old · target {sla}h
+                    </span>
+                  )}
+                </div>
+                <p className="mt-3 text-sm text-ink-soft">
+                  <span className="font-semibold text-ink">{link ? <Link href={link}>{r.targetType}</Link> : r.targetType}</span>
+                  {targetUser ? (
+                    <>
+                      {" "}
+                      by <Link href={`/u/${targetUser.username}`}>{targetUser.displayName}</Link> <span className="text-muted">({targetUser.status})</span>
+                    </>
+                  ) : null}
+                  <span className="text-muted">
+                    {" "}
+                    · {r.reporterId ? `member report (weight ${r.weight})` : r.reporterContact ? "public notice" : "automatic"} · {formatDateTime(r.createdAt)}
+                  </span>
+                </p>
+                {r.details ? <p className="prose-user mt-3 rounded-lg bg-subtle p-3 text-sm leading-relaxed text-ink-soft">{r.details}</p> : null}
+                {r.reporterContact ? <p className="mt-2 text-xs text-muted">Reply to: {r.reporterContact}</p> : null}
               </div>
-              <p className="text-sm">
-                Target: {link ? <Link href={link}>{r.targetType}</Link> : r.targetType} {targetUser ? <>· member <Link href={`/u/${targetUser.username}`}>{targetUser.displayName}</Link> ({targetUser.status})</> : null}
-              </p>
-              {r.details ? <p className="prose-user mt-1 text-sm">{r.details}</p> : null}
-              {r.reporterContact ? <p className="muted text-xs">Reply to: {r.reporterContact}</p> : null}
-              <div className="mt-3 flex flex-wrap items-start gap-2">
+              <div className="flex flex-wrap items-center gap-2 border-t border-line bg-subtle px-5 py-3">
                 {r.targetType === "post" || r.targetType === "answer" ? (
-                  <ActionButton action="/api/mod/content" fields={{ targetType: r.targetType, targetId: r.targetId, decision: "remove", reasonCode: r.reason === "scam" || r.reason === "fake_opportunity" ? "scam" : "policy", reportId: r.id, _back: "/mod/reports" }} variant="danger">
+                  <ActionButton
+                    action="/api/mod/content"
+                    fields={{ targetType: r.targetType, targetId: r.targetId, decision: "remove", reasonCode: r.reason === "scam" || r.reason === "fake_opportunity" ? "scam" : "policy", reportId: r.id, _back: "/mod/reports" }}
+                    variant="danger"
+                    size="sm"
+                    icon={Trash}
+                  >
                     Remove content
                   </ActionButton>
                 ) : null}
                 {r.targetUserId ? <UserActionForm userId={r.targetUserId} back="/mod/reports" reportId={r.id} /> : null}
-                <Form action="/api/mod/reports/resolve" back="/mod/reports" className="flex flex-wrap items-center gap-2">
+                <Form action="/api/mod/reports/resolve" back="/mod/reports" className="flex flex-wrap items-center gap-2 lg:ml-auto">
                   <input type="hidden" name="reportId" value={r.id} />
                   <label className="sr-only" htmlFor={`note-${r.id}`}>
                     Resolution note
                   </label>
-                  <div className="w-64 max-w-full">
-                    <input id={`note-${r.id}`} name="note" maxLength={500} className="input" placeholder="Resolution note (optional)" />
+                  <div className="w-56 max-w-full">
+                    <input id={`note-${r.id}`} name="note" maxLength={500} className="input min-h-8 py-1.5 text-sm" placeholder="Resolution note (optional)" />
                   </div>
-                  <button className="btn btn-secondary" type="submit" name="resolution" value="dismiss">
+                  <button className="btn btn-secondary btn-sm" type="submit" name="resolution" value="dismiss">
                     Dismiss
                   </button>
-                  <button className="btn btn-secondary" type="submit" name="resolution" value="actioned">
+                  <button className="btn btn-secondary btn-sm" type="submit" name="resolution" value="actioned">
                     Mark handled
                   </button>
                 </Form>
               </div>
-            </Card>
+            </article>
           );
         })}
       </div>

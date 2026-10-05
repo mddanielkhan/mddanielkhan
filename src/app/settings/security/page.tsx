@@ -5,8 +5,8 @@ import { otpauthUri } from "@/lib/auth/totp";
 import { BRAND } from "@/lib/config/brand";
 import { isStaffRole } from "@/lib/policy/policy";
 import { ActionButton, Form } from "@/components/form";
-import { SettingsNav } from "@/components/settings-nav";
-import { Card, Flash, Notice, PageHeader, Pill, TextField, formatDateTime } from "@/components/ui";
+import { Flash, Notice, PageHeader, Panel, Pill, TextField, formatDateTime, timeAgo } from "@/components/ui";
+import { CircleCheck, Icon, KeyRound, MonitorSmartphone, ShieldCheck, TriangleAlert } from "@/components/icons";
 import type { SearchParams } from "@/lib/http/page";
 
 export const metadata = { title: "Security", robots: { index: false } };
@@ -24,94 +24,118 @@ export default async function SecurityPage({ searchParams }: { searchParams: Sea
   const pending = pendingTotpSecret(actor.user);
   const qr = pending ? await QRCode.toDataURL(otpauthUri(pending, actor.user.username, BRAND.name), { margin: 1, width: 220 }) : null;
   const staff = isStaffRole(actor.user.role);
+  const on = !!actor.user.totpEnabledAt;
   return (
-    <div className="mx-auto max-w-3xl">
-      <PageHeader title="Security & devices" />
-      <SettingsNav current="security" />
+    <>
+      <PageHeader title="Security & devices" subtitle="Protect your account and see where you're signed in." />
       <Flash searchParams={await searchParams} />
-
-      <Card className="mb-6">
-        <h2 id="totp" className="mb-2 text-lg font-semibold">
-          Two-factor authentication {actor.user.totpEnabledAt ? <Pill tone="brand">On</Pill> : <Pill tone="warn">Off</Pill>}
-        </h2>
-        {staff || !actor.user.totpEnabledAt ? (
-          <p className="muted mb-3 text-sm">Required for mentors and moderators. Strongly recommended for everyone: it stops someone who learns your password from getting in.</p>
-        ) : null}
-        {actor.user.totpEnabledAt ? (
-          <>
-            <p className="text-sm">Enabled {formatDateTime(actor.user.totpEnabledAt)}. Recovery codes remaining: {recovery}.</p>
-            {recovery <= 3 ? <Notice tone="warn">You are running low on recovery codes. Turn 2FA off and on again to get a fresh set.</Notice> : null}
-            {!staff ? (
-              <details className="mt-3">
-                <summary className="cursor-pointer text-sm">Turn off two-factor authentication</summary>
-                <Form action="/api/auth/totp/disable" back="/settings/security" className="mt-3">
-                  <TextField label="Password" name="password" type="password" autoComplete="current-password" required />
-                  <TextField label="Current 6-digit code or a recovery code" name="code" required autoComplete="one-time-code" />
-                  <button className="btn btn-danger" type="submit">
-                    Turn off 2FA
+      <div className="space-y-6">
+        <Panel
+          id="totp"
+          title={
+            <span className="flex items-center gap-2">
+              <Icon icon={ShieldCheck} className="h-5 w-5 text-brand-ink" />
+              Two-factor authentication
+            </span>
+          }
+          description="Stops someone who learns your password from getting in. Required for mentors and moderators."
+          actions={on ? <Pill tone="brand" icon={CircleCheck}>On</Pill> : <Pill tone="warn" icon={TriangleAlert}>Off</Pill>}
+        >
+          {on ? (
+            <>
+              <p className="text-sm text-ink-soft">
+                Enabled {formatDateTime(actor.user.totpEnabledAt)}. Recovery codes remaining: <strong className="text-ink">{recovery}</strong>.
+              </p>
+              {recovery <= 3 ? (
+                <Notice tone="warn" className="mt-4">
+                  You are running low on recovery codes. Turn 2FA off and on again to get a fresh set.
+                </Notice>
+              ) : null}
+              {!staff ? (
+                <details className="mt-5 border-t border-line pt-4">
+                  <summary className="text-sm font-semibold text-muted hover:text-ink">Turn off two-factor authentication</summary>
+                  <Form action="/api/auth/totp/disable" back="/settings/security" className="mt-4 max-w-md">
+                    <TextField label="Password" name="password" type="password" autoComplete="current-password" required />
+                    <TextField label="Current 6-digit code or a recovery code" name="code" required autoComplete="one-time-code" />
+                    <button className="btn btn-danger" type="submit">
+                      Turn off 2FA
+                    </button>
+                  </Form>
+                </details>
+              ) : null}
+            </>
+          ) : pending && qr ? (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-[13.75rem_minmax(0,1fr)]">
+              {/* eslint-disable-next-line @next/next/no-img-element -- local data: URL, not a remote image */}
+              <img src={qr} alt="QR code for your authenticator app" width={220} height={220} className="rounded-xl border border-line bg-white p-2" />
+              <div>
+                <ol className="space-y-2 text-sm text-ink-soft">
+                  <li>
+                    <strong className="text-ink">1.</strong> Install an authenticator app (Google Authenticator, Microsoft Authenticator, Aegis…).
+                  </li>
+                  <li>
+                    <strong className="text-ink">2.</strong> Scan this QR code, or type the key below.
+                  </li>
+                  <li>
+                    <strong className="text-ink">3.</strong> Enter the 6-digit code it shows.
+                  </li>
+                </ol>
+                <p className="mt-4 rounded-lg bg-subtle px-3 py-2 font-mono text-sm tracking-wider break-all text-ink">{pending.match(/.{1,4}/g)?.join(" ")}</p>
+                <Form action="/api/auth/totp/confirm" back="/settings/security" className="mt-4 max-w-xs">
+                  <TextField label="6-digit code" name="code" inputMode="numeric" autoComplete="one-time-code" required maxLength={10} />
+                  <button className="btn btn-primary" type="submit">
+                    Turn on 2FA
                   </button>
                 </Form>
-              </details>
-            ) : null}
-          </>
-        ) : pending && qr ? (
-          <div className="grid gap-4 sm:grid-cols-[220px_1fr]">
-            {/* eslint-disable-next-line @next/next/no-img-element -- local data: URL, not a remote image */}
-            <img src={qr} alt="QR code for your authenticator app" width={220} height={220} className="rounded-lg bg-white p-2" />
-            <div>
-              <ol className="mb-3 list-decimal pl-5 text-sm">
-                <li>Install an authenticator app (Google Authenticator, Microsoft Authenticator, Aegis…).</li>
-                <li>Scan this QR code, or type the key below.</li>
-                <li>Enter the 6-digit code it shows.</li>
-              </ol>
-              <p className="mb-3 break-all font-mono text-sm">{pending.match(/.{1,4}/g)?.join(" ")}</p>
-              <Form action="/api/auth/totp/confirm" back="/settings/security">
-                <TextField label="6-digit code" name="code" inputMode="numeric" autoComplete="one-time-code" required maxLength={10} />
-                <button className="btn btn-primary" type="submit">
-                  Turn on 2FA
-                </button>
-              </Form>
+              </div>
             </div>
-          </div>
-        ) : (
-          <ActionButton action="/api/auth/totp/begin" variant="primary">
-            Set up two-factor authentication
-          </ActionButton>
-        )}
-      </Card>
+          ) : (
+            <ActionButton action="/api/auth/totp/begin" variant="primary" icon={KeyRound}>
+              Set up two-factor authentication
+            </ActionButton>
+          )}
+        </Panel>
 
-      <Card className="mb-6">
-        <h2 className="mb-2 text-lg font-semibold">Change password</h2>
-        <Form action="/api/auth/change-password" back="/settings/security">
-          <TextField label="Current password" name="current" type="password" autoComplete="current-password" required />
-          <TextField label="New password" name="password" type="password" autoComplete="new-password" required minLength={15} maxLength={128} hint="At least 15 characters. Other devices will be signed out." />
-          <button className="btn btn-primary" type="submit">
-            Change password
-          </button>
-        </Form>
-      </Card>
+        <Panel title="Change password" description="At least 15 characters. Other devices will be signed out.">
+          <Form action="/api/auth/change-password" back="/settings/security" className="max-w-md">
+            <TextField label="Current password" name="current" type="password" autoComplete="current-password" required />
+            <TextField label="New password" name="password" type="password" autoComplete="new-password" required minLength={15} maxLength={128} />
+            <button className="btn btn-primary" type="submit">
+              Change password
+            </button>
+          </Form>
+        </Panel>
 
-      <Card>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold">Signed-in devices</h2>
-          {devices.length > 1 ? <ActionButton action="/api/auth/sessions/revoke-others">Sign out all other devices</ActionButton> : null}
-        </div>
-        <ul className="divide-y divide-[var(--color-line)]">
-          {devices.map((d) => (
-            <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
-              <span>
-                {deviceName(d.userAgent)} {d.id === actor.session.id ? <Pill tone="brand">This device</Pill> : null}
-                <span className="muted block">Last active {formatDateTime(d.lastSeenAt)} · signed in {formatDateTime(d.createdAt)}</span>
-              </span>
-              {d.id !== actor.session.id ? (
-                <ActionButton action="/api/auth/sessions/revoke" fields={{ sessionId: d.id }}>
-                  Sign out
-                </ActionButton>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-      </Card>
-    </div>
+        <Panel
+          title="Signed-in devices"
+          description="Sign out anything you don't recognise, then change your password."
+          actions={devices.length > 1 ? <ActionButton action="/api/auth/sessions/revoke-others" size="sm">Sign out all other devices</ActionButton> : null}
+        >
+          <ul className="-my-2 divide-y divide-line">
+            {devices.map((d) => (
+              <li key={d.id} className="flex flex-wrap items-center gap-3 py-3">
+                <span className="icon-tile icon-tile-neutral h-9 w-9">
+                  <Icon icon={MonitorSmartphone} />
+                </span>
+                <span className="min-w-0 flex-1 text-sm">
+                  <span className="flex flex-wrap items-center gap-2 font-semibold text-ink">
+                    {deviceName(d.userAgent)}
+                    {d.id === actor.session.id ? <Pill tone="brand">This device</Pill> : null}
+                  </span>
+                  <span className="block text-xs text-muted">
+                    Last active {timeAgo(d.lastSeenAt)} · signed in {formatDateTime(d.createdAt)}
+                  </span>
+                </span>
+                {d.id !== actor.session.id ? (
+                  <ActionButton action="/api/auth/sessions/revoke" fields={{ sessionId: d.id }} size="sm">
+                    Sign out
+                  </ActionButton>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      </div>
+    </>
   );
 }

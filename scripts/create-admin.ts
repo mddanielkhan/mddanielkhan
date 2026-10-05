@@ -4,6 +4,7 @@
  * Prints a one-time random password. Log in, change it, and enable 2FA —
  * staff powers stay locked until 2FA is verified in the session.
  */
+import "@/lib/cli/load-env"; // must stay first: loads .env before any module reads config
 import { randomBytes } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { db, closeDb } from "@/lib/db/client";

@@ -51,7 +51,8 @@ export async function login(page: Page, email: string, password = DEMO_PASSWORD,
     await page.getByLabel(/6-digit code/).fill(totp(totpSecret));
     await page.getByRole("button", { name: "Verify" }).click();
   }
-  await expect(page.getByRole("button", { name: /log out/i })).toBeVisible();
+  // Signed-in state: the account menu replaces the log-in links in the header.
+  await expect(page.getByTestId("account-menu")).toBeVisible();
 }
 
 /** Fail the test on any CSP violation or uncaught page error. */

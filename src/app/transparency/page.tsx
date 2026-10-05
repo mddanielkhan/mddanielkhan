@@ -1,6 +1,7 @@
 import { transparencyStats } from "@/lib/moderation/service";
 import { REASON_LABELS } from "@/lib/reports/service";
-import { Card, PageHeader } from "@/components/ui";
+import { PageHeader, Panel, Stat } from "@/components/ui";
+import { Clock, ShieldAlert, Timer } from "@/components/icons";
 
 export const metadata = { title: "Transparency report" };
 export const dynamic = "force-dynamic";
@@ -21,67 +22,44 @@ const ACTION_LABEL: Record<string, string> = {
   mentor_pause: "Mentors paused",
 };
 
+function CountTable({ rows, empty }: { rows: Array<[string, number]>; empty: string }) {
+  if (rows.length === 0) return <p className="text-sm text-muted">{empty}</p>;
+  return (
+    <ul className="-my-2 divide-y divide-line text-sm">
+      {rows.map(([k, n]) => (
+        <li key={k} className="flex items-center justify-between gap-3 py-2.5">
+          <span className="text-ink-soft">{k}</span>
+          <span className="font-bold tabular-nums">{n}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export default async function TransparencyPage() {
   const s = await transparencyStats(90);
   const fmtH = (h: number | null) => (h === null ? "—" : h < 1 ? `${Math.round(h * 60)} min` : `${Math.round(h * 10) / 10} h`);
   return (
-    <div className="mx-auto max-w-3xl">
-      <PageHeader title="Transparency report" subtitle={`Live figures for the last ${s.days} days. Published because trust has to be checkable.`} />
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        <Card>
-          <p className="muted text-sm">Median time to act on a report</p>
-          <p className="text-2xl font-bold">{fmtH(s.timing.medianHours ? Number(s.timing.medianHours) : null)}</p>
-        </Card>
-        <Card>
-          <p className="muted text-sm">90th percentile</p>
-          <p className="text-2xl font-bold">{fmtH(s.timing.p90Hours ? Number(s.timing.p90Hours) : null)}</p>
-        </Card>
-        <Card>
-          <p className="muted text-sm">Posts held by the scam filter</p>
-          <p className="text-2xl font-bold">{s.autoHeld}</p>
-        </Card>
-      </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <h2 className="mb-2 font-semibold">Moderation actions</h2>
-          <ul className="space-y-1 text-sm">
-            {s.actions.length === 0 ? <li className="muted">None yet.</li> : null}
-            {s.actions.map((a) => (
-              <li key={a.action} className="flex justify-between">
-                <span>{ACTION_LABEL[a.action] ?? a.action}</span>
-                <span>{a.n}</span>
-              </li>
-            ))}
-          </ul>
-        </Card>
-        <Card>
-          <h2 className="mb-2 font-semibold">Reports received, by reason</h2>
-          <ul className="space-y-1 text-sm">
-            {s.reasons.length === 0 ? <li className="muted">None yet.</li> : null}
-            {s.reasons.map((r) => (
-              <li key={r.reason} className="flex justify-between">
-                <span>{REASON_LABELS[r.reason]}</span>
-                <span>{r.n}</span>
-              </li>
-            ))}
-          </ul>
-        </Card>
-        <Card>
-          <h2 className="mb-2 font-semibold">Appeals</h2>
-          <ul className="space-y-1 text-sm">
-            {s.appeals.length === 0 ? <li className="muted">None yet.</li> : null}
-            {s.appeals.map((a) => (
-              <li key={a.status} className="flex justify-between">
-                <span>{a.status === "granted" ? "Granted (decision reversed)" : a.status === "denied" ? "Denied" : "Pending"}</span>
-                <span>{a.n}</span>
-              </li>
-            ))}
-          </ul>
-        </Card>
-        <Card>
-          <h2 className="mb-2 font-semibold">Government & legal requests</h2>
-          <p className="text-sm">Requests are logged, reviewed by counsel and reported here each quarter. Quarterly reports also include confirmed scam incidents and what we changed as a result.</p>
-        </Card>
+    <div className="mx-auto max-w-5xl">
+      <PageHeader eyebrow="Accountability" title="Transparency report" subtitle={`Live figures for the last ${s.days} days, straight from our moderation records. Published because trust has to be checkable.`} />
+      <section aria-label="Headline figures" className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Stat label="Median time to act on a report" value={fmtH(s.timing.medianHours ? Number(s.timing.medianHours) : null)} icon={Timer} />
+        <Stat label="90th percentile" value={fmtH(s.timing.p90Hours ? Number(s.timing.p90Hours) : null)} icon={Clock} tone="info" />
+        <Stat label="Posts stopped by the scam filter" value={s.autoHeld} icon={ShieldAlert} tone="danger" />
+      </section>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <Panel title="Moderation actions">
+          <CountTable rows={s.actions.map((a) => [ACTION_LABEL[a.action] ?? a.action, a.n])} empty="None yet." />
+        </Panel>
+        <Panel title="Reports received, by reason">
+          <CountTable rows={s.reasons.map((r) => [REASON_LABELS[r.reason], r.n])} empty="None yet." />
+        </Panel>
+        <Panel title="Appeals">
+          <CountTable rows={s.appeals.map((a) => [a.status === "granted" ? "Granted (decision reversed)" : a.status === "denied" ? "Denied" : "Pending", a.n])} empty="None yet." />
+        </Panel>
+        <Panel title="Government & legal requests">
+          <p className="text-sm leading-relaxed text-ink-soft">Requests are logged, reviewed by counsel and reported here each quarter. Quarterly reports also include confirmed scam incidents and what we changed as a result.</p>
+        </Panel>
       </div>
     </div>
   );

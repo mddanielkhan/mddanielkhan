@@ -8,6 +8,7 @@ const entries = {
   "create-admin": "scripts/create-admin.ts",
   seed: "scripts/seed.ts",
   "verify-audit-chain": "scripts/verify-audit-chain.ts",
+  doctor: "scripts/doctor.ts",
 };
 
 await build({

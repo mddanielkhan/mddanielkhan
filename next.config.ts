@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   serverExternalPackages: ["@node-rs/argon2", "pg"],
   typedRoutes: false,
+  // Don't let `next dev` write AGENTS.md/CLAUDE.md into the repository on every start.
+  agentRules: false,
   outputFileTracingExcludes: { "*": ["test-results/**", ".mail-outbox/**", "tests/**", "docs/**", "deploy/**"] },
   experimental: {
     // Bound request bodies: our largest legitimate form is a 20k-char post.

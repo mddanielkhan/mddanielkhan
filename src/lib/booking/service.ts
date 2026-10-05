@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, inArray, lte, ne, or, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { db, type DbOrTx } from "@/lib/db/client";
 import { bookingMessages, bookings, feedback, mentorProfiles, mentorTopics, offerings, reports, users } from "@/lib/db/schema";
 import { audit } from "@/lib/audit/audit";
@@ -319,6 +320,8 @@ export async function leaveFeedback(actor: ResolvedSession, input: { id: string;
 // ─── Queries ────────────────────────────────────────────────────────────────
 
 export async function listMyBookings(userId: string) {
+  const mentor = alias(users, "mentor");
+  const mentee = alias(users, "mentee");
   return db()
     .select({
       id: bookings.id,
@@ -330,8 +333,14 @@ export async function listMyBookings(userId: string) {
       mentorId: bookings.mentorId,
       menteeId: bookings.menteeId,
       durationMin: bookings.durationMin,
+      mentorOutcome: bookings.mentorOutcome,
+      menteeOutcome: bookings.menteeOutcome,
+      mentorName: mentor.displayName,
+      menteeName: mentee.displayName,
     })
     .from(bookings)
+    .innerJoin(mentor, eq(mentor.id, bookings.mentorId))
+    .innerJoin(mentee, eq(mentee.id, bookings.menteeId))
     .where(or(eq(bookings.mentorId, userId), eq(bookings.menteeId, userId)))
     .orderBy(desc(bookings.createdAt))
     .limit(100);

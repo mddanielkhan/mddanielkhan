@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { listOpportunities } from "@/lib/content/service";
-import { EmptyState, Flash, Notice, PageHeader, Pill, formatDate } from "@/components/ui";
+import { DeadlinePill, EmptyState, Flash, Notice, PageHeader, Pill, Tabs, formatDate } from "@/components/ui";
+import { BadgeCheck, CalendarDays, Compass, Icon, Landmark, Plus, TriangleAlert } from "@/components/icons";
 import { sp, type SearchParams } from "@/lib/http/page";
 
 export const metadata = { title: "Opportunities & deadlines" };
@@ -12,61 +13,90 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
   return (
     <>
       <PageHeader
-        title="Opportunities & deadlines"
-        subtitle="Scholarships, internships, fellowships and competitions shared by the community. Verified ones were checked by a moderator against the official source."
+        eyebrow="Opportunities"
+        title="Scholarships, internships & deadlines"
+        subtitle="Shared by the community. A ✓ means a moderator checked it against the official source — and you can still confirm it there yourself."
         actions={
           <>
+            <a href="/opportunities/calendar.ics" className="btn btn-secondary">
+              <Icon icon={CalendarDays} />
+              Subscribe to deadlines
+            </a>
             <Link href="/posts/new?type=opportunity" className="btn btn-primary">
+              <Icon icon={Plus} />
               Share an opportunity
             </Link>
-            <a href="/opportunities/calendar.ics" className="btn btn-secondary">
-              📅 Subscribe to deadlines
-            </a>
           </>
         }
       />
       <Flash searchParams={params} />
-      <Notice tone="warn">Real opportunities never ask you to pay a person, never guarantee results, and can always be confirmed on the official website.</Notice>
-      <div className="mb-4 flex gap-4 text-sm">
-        <Link href="/opportunities" className={verifiedOnly ? "font-semibold" : "muted"}>
-          Verified only
-        </Link>
-        <Link href="/opportunities?verified=all" className={!verifiedOnly ? "font-semibold" : "muted"}>
-          Include unverified
-        </Link>
+      <Notice tone="warn" title="Three rules that stop most scams">
+        Real opportunities never ask you to pay a person, never guarantee results, and can always be confirmed on the official website.
+      </Notice>
+
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <Tabs
+          label="Filter opportunities"
+          items={[
+            { href: "/opportunities", label: "Verified only", current: verifiedOnly },
+            { href: "/opportunities?verified=all", label: "Include unverified", current: !verifiedOnly },
+          ]}
+        />
+        <p className="text-sm text-muted">
+          {items.length} open {items.length === 1 ? "opportunity" : "opportunities"} · soonest deadline first
+        </p>
       </div>
+
       {items.length === 0 ? (
-        <EmptyState title="No open opportunities yet">Share one you know about — with the official link.</EmptyState>
+        <EmptyState
+          title="No open opportunities yet"
+          icon={Compass}
+          action={
+            <Link href="/posts/new?type=opportunity" className="btn btn-primary">
+              Share one you know about
+            </Link>
+          }
+        >
+          Include the official link so a moderator can verify it.
+        </EmptyState>
       ) : (
-        <div className="card overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-[var(--color-line)]">
-              <tr>
-                <th className="p-3">Opportunity</th>
-                <th className="p-3">Organisation</th>
-                <th className="p-3">Deadline</th>
-                <th className="p-3">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((o) => (
-                <tr key={o.id} className="border-b border-[var(--color-line)] last:border-0">
-                  <td className="p-3">
-                    <Link href={`/posts/${o.id}`} className="font-medium">
+        <ul className="space-y-3">
+          {items.map((o) => (
+            <li key={o.id}>
+              <article className="card card-interactive relative flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
+                <span className="icon-tile icon-tile-info h-12 w-12 rounded-2xl">
+                  <Icon icon={Landmark} className="h-6 w-6" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-base font-bold leading-snug">
+                    <Link href={`/posts/${o.id}`} className="text-ink no-underline after:absolute after:inset-0 after:rounded-[var(--radius-card)] hover:text-brand-ink">
                       {o.title}
                     </Link>
-                    <span className="muted block text-xs">{o.topicName}</span>
-                  </td>
-                  <td className="p-3">{o.orgName}</td>
-                  <td className="p-3 whitespace-nowrap">{o.deadline ? formatDate(o.deadline) : "Rolling"}</td>
-                  <td className="p-3">
-                    {o.verifiedAt ? <Pill tone="brand">✓ Verified</Pill> : <Pill tone="warn">Unverified</Pill>} {o.involvesFee ? <Pill tone="warn">Fee</Pill> : null}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </h2>
+                  <p className="mt-1 text-sm text-muted">
+                    <span className="font-semibold text-ink-soft">{o.orgName}</span> · {o.topicName}
+                  </p>
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                    {o.verifiedAt ? (
+                      <Pill tone="brand" icon={BadgeCheck}>
+                        Verified
+                      </Pill>
+                    ) : (
+                      <Pill tone="warn" icon={TriangleAlert}>
+                        Unverified — check the official site
+                      </Pill>
+                    )}
+                    {o.involvesFee ? <Pill tone="warn">Involves a fee</Pill> : <Pill>Free to apply</Pill>}
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-3 sm:flex-col sm:items-end sm:gap-1.5">
+                  <p className="text-sm font-semibold tabular-nums text-ink">{o.deadline ? formatDate(o.deadline) : "No fixed deadline"}</p>
+                  <DeadlinePill deadline={o.deadline} />
+                </div>
+              </article>
+            </li>
+          ))}
+        </ul>
       )}
     </>
   );

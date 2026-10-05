@@ -2,12 +2,14 @@
   "name": "shikor",
   "version": "1.0.0",
   "private": true,
-  "description": "Shikor \u2014 a verification-first student community and mentorship platform (Bangladesh-first, web/PWA).",
+  "description": "Shikor — a verification-first student community and mentorship platform (Bangladesh-first, web/PWA).",
   "type": "module",
   "engines": {
     "node": ">=22.12 <23 || >=24"
   },
   "scripts": {
+    "setup": "tsx scripts/setup.ts",
+    "doctor": "tsx scripts/doctor.ts",
     "dev": "next dev",
     "build": "next build && node scripts/postbuild.mjs && npm run build:worker",
     "build:worker": "node scripts/build-worker.mjs",
@@ -30,8 +32,11 @@
     "check": "npm run lint && npm run typecheck && npm run test"
   },
   "dependencies": {
+    "@fontsource-variable/noto-sans-bengali": "5.3.0",
+    "@fontsource-variable/plus-jakarta-sans": "5.3.0",
     "@node-rs/argon2": "2.2.1",
     "drizzle-orm": "0.45.3",
+    "lucide": "1.52.0",
     "next": "16.3.8",
     "nodemailer": "10.0.14",
     "pg": "8.23.1",

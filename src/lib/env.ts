@@ -92,7 +92,17 @@ export function env(): Env {
     throw new Error(`Invalid environment configuration:\n${issues}`);
   }
   cached = parsed.data;
+  if (cached.NODE_ENV === "development" && (!process.env.APP_SECRET || !process.env.ENCRYPTION_KEY)) {
+    // Development convenience only (production refuses to boot without real secrets). Say so loudly:
+    // two processes on different fallbacks cannot read each other's encrypted data (e.g. 2FA secrets).
+    console.warn("[shikor] APP_SECRET/ENCRYPTION_KEY are not set — using built-in development keys. Run `npm run setup` to create a .env with your own.");
+  }
   return cached;
+}
+
+/** True when the built-in development keys are in use (never allowed in production). */
+export function usingDevelopmentSecrets(): boolean {
+  return !process.env.APP_SECRET || !process.env.ENCRYPTION_KEY;
 }
 
 /** For tests only: re-read process.env. */

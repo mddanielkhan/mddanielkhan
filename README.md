@@ -12,8 +12,9 @@ This repository is the complete, working **Phase 1**. It is the improved and ver
 | | |
 |---|---|
 | Stack | Next.js 16.3.8 · React 19 · TypeScript (strict) · PostgreSQL 16+ · Drizzle ORM · Tailwind CSS 4 |
+| Design | Own design system: light + dark themes, self-hosted Plus Jakarta Sans + Noto Sans Bengali, server-rendered Lucide icons, WCAG 2.2 AA contrast, mobile-first, works without JavaScript |
 | Size | 46 pages · 57 API routes (all through one security pipeline) · 30 tables · background worker |
-| Tests | 235 unit + integration (real Postgres) · 12 Playwright E2E (production build, desktop + mobile, every role) · coverage gates |
+| Tests | 243 unit + integration (real Postgres) · 12 Playwright E2E (production build, desktop + mobile, every role) · coverage gates |
 | Security | Argon2id · opaque sessions · TOTP 2FA (mandatory for mentors and staff) · nonce CSP · signed CSRF · central deny-by-default policy · hash-chained audit log · least-privilege DB roles |
 | Runs on | One small VPS behind Cloudflare (~$10–25/month), Docker Compose, Caddy |
 
@@ -31,11 +32,14 @@ This repository is the complete, working **Phase 1**. It is the improved and ver
 
 ```bash
 npm ci
-cp .env.example .env          # then set APP_SECRET and ENCRYPTION_KEY: openssl rand -hex 32 (twice)
-docker compose up -d          # PostgreSQL + Mailpit
-npm run db:migrate && npm run db:seed
-npm run dev                   # http://localhost:3000 — demo logins are printed by the seed
+npm run setup                 # creates .env with fresh secrets, starts PostgreSQL + Mailpit (Docker),
+                              # migrates, seeds demo data, prints logins and 2FA QR codes
+npm run dev                   # http://localhost:3000
+npm run doctor                # any time: checks config, secrets, database, audit chain and email
 ```
+
+No Docker? Use your own PostgreSQL 16+ with `npm run setup -- --no-docker`. Details and troubleshooting are in
+[docs/SETUP.md](docs/SETUP.md#part-a--local-development).
 
 Quality gates (the same ones CI runs):
 

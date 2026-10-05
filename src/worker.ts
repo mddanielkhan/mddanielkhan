@@ -4,6 +4,7 @@
  * Safe to run more than one instance: jobs use SKIP LOCKED and scheduled tasks
  * take a Postgres advisory lock so each runs once per interval cluster-wide.
  */
+import "@/lib/cli/load-env"; // must stay first: loads .env before any module reads config
 import "@/lib/jobs/handlers";
 import { sql } from "drizzle-orm";
 import { db, closeDb } from "@/lib/db/client";

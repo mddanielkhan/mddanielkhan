@@ -1,4 +1,5 @@
 /** Recompute every audit hash. Exit code 2 if the chain is broken (wire into monitoring and the restore drill). */
+import "@/lib/cli/load-env"; // must stay first: loads .env before any module reads config
 import { verifyAuditChain } from "@/lib/audit/audit";
 import { closeDb } from "@/lib/db/client";
 

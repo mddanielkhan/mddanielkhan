@@ -3,7 +3,8 @@ import Link from "next/link";
 import { requireActor } from "@/lib/auth/current";
 import { decryptField } from "@/lib/security/crypto";
 import { RECOVERY_CODES_COOKIE } from "@/lib/http/cookies";
-import { Card, Flash, Notice, PageHeader } from "@/components/ui";
+import { Flash, Notice, PageHeader, Panel } from "@/components/ui";
+import { ArrowLeft, Icon } from "@/components/icons";
 import type { SearchParams } from "@/lib/http/page";
 
 export const metadata = { title: "Recovery codes", robots: { index: false } };
@@ -18,26 +19,31 @@ export default async function RecoveryCodesPage({ searchParams }: { searchParams
     codes = [];
   }
   return (
-    <div className="mx-auto max-w-xl">
-      <PageHeader title="Save your recovery codes" />
+    <>
+      <PageHeader title="Save your recovery codes" breadcrumbs={[{ href: "/settings/security", label: "Security & devices" }, { label: "Recovery codes" }]} />
       <Flash searchParams={await searchParams} />
       {codes.length ? (
         <>
-          <Notice tone="warn">Each code works once if you lose your phone. Write them down or store them in a password manager. They won&apos;t be shown again.</Notice>
-          <Card>
-            <ul className="grid grid-cols-2 gap-2 font-mono">
+          <Notice tone="warn" title="Shown once">
+            Each code works one time if you lose your phone. Write them down or store them in a password manager — they won&apos;t be shown again.
+          </Notice>
+          <Panel title="Your recovery codes">
+            <ul className="grid grid-cols-2 gap-2 font-mono text-[0.9375rem] tracking-wider">
               {codes.map((c) => (
-                <li key={c}>{c}</li>
+                <li key={c} className="rounded-lg border border-line bg-subtle px-3 py-2 text-center">
+                  {c}
+                </li>
               ))}
             </ul>
-          </Card>
+          </Panel>
         </>
       ) : (
         <Notice tone="info">Recovery codes are only shown right after you turn on 2FA.</Notice>
       )}
-      <p className="mt-4">
-        <Link href="/settings/security">← Back to security</Link>
-      </p>
-    </div>
+      <Link href="/settings/security" className="btn btn-secondary mt-6">
+        <Icon icon={ArrowLeft} />
+        Back to security
+      </Link>
+    </>
   );
 }
