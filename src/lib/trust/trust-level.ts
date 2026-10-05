@@ -86,15 +86,21 @@ export function computeTrustLevel(i: TrustInputs): number {
   return level;
 }
 
-export function explainTrustLevel(i: TrustInputs) {
-  const current = computeTrustLevel(i);
-  const next = LEVELS.find((l) => l.level === current + 1);
+/**
+ * What a member's level is and what the next one needs. Pass `held` (the stored
+ * level shown on their profile) so the explanation never contradicts it: stored
+ * levels only change at the daily recompute or after moderation, so they can lag
+ * behind the live inputs. `promotionPending` marks that lag.
+ */
+export function explainTrustLevel(i: TrustInputs, held?: number) {
+  const current = held ?? computeTrustLevel(i);
+  const next = current >= 3 ? undefined : LEVELS.find((l) => l.level === current + 1);
+  const requirements = next?.requirements.map((r) => ({ label: r.label, met: r.met(i), progress: r.progress(i) })) ?? [];
   return {
     current,
-    currentName: current === 4 ? "Leader" : (LEVELS[current]?.name ?? "New"),
-    next: next
-      ? { level: next.level, name: next.name, requirements: next.requirements.map((r) => ({ label: r.label, met: r.met(i), progress: r.progress(i) })) }
-      : null,
+    currentName: trustLevelName(current),
+    next: next ? { level: next.level, name: next.name, requirements } : null,
+    promotionPending: next !== undefined && requirements.every((r) => r.met),
   };
 }
 

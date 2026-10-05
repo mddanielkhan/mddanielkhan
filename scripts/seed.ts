@@ -11,7 +11,8 @@ import "@/lib/cli/load-env"; // must stay first: loads .env before any module re
 import { eq, sql } from "drizzle-orm";
 import { db, closeDb } from "@/lib/db/client";
 import { answers, badges, bookings, feedback, mentorProfiles, mentorTopics, notifications, offerings, posts, profiles, reports, topics, users, votes } from "@/lib/db/schema";
-import { award } from "@/lib/trust/reputation";
+import { award, gatherTrustInputs } from "@/lib/trust/reputation";
+import { computeTrustLevel } from "@/lib/trust/trust-level";
 import { seedTopics } from "@/lib/content/topics";
 import { hashPassword } from "@/lib/auth/password";
 import { encryptField } from "@/lib/security/crypto";
@@ -38,7 +39,7 @@ async function main() {
   const mk = async (email: string, username: string, displayName: string, extra: Partial<typeof users.$inferInsert> = {}, profile: Partial<typeof profiles.$inferInsert> = {}) => {
     const [u] = await db()
       .insert(users)
-      .values({ email, username, displayName, passwordHash: hash, emailVerifiedAt: new Date(), adultAttestedAt: new Date(), createdAt: old, trustLevel: 2, daysVisited: 30, ...extra })
+      .values({ email, username, displayName, passwordHash: hash, emailVerifiedAt: new Date(), adultAttestedAt: new Date(), createdAt: old, daysVisited: 30, ...extra })
       .returning();
     await db().insert(profiles).values({ userId: u!.id, ...profile });
     return u!;
@@ -49,10 +50,10 @@ async function main() {
   const mentorSecret = process.env.SEED_MENTOR_TOTP ?? generateTotpSecret();
   const admin = await mk(DEMO_EMAIL.admin, "founder", "Founder", { role: "admin", trustLevel: 4 });
   await db().update(users).set({ totpSecretEnc: encryptField(adminSecret, `totp:${admin.id}`), totpEnabledAt: new Date() }).where(eq(users.id, admin.id));
-  const mentor = await mk(DEMO_EMAIL.mentor, "nusrat_tum", "Nusrat Jahan", { trustLevel: 3 }, { headline: "MSc Informatics, TU Munich · ex-BUET CSE", institution: "Technical University of Munich", fieldOfStudy: "Informatics", languages: ["Bangla", "English", "German"], gender: "woman", showGender: true });
+  const mentor = await mk(DEMO_EMAIL.mentor, "nusrat_tum", "Nusrat Jahan", {}, { headline: "MSc Informatics, TU Munich · ex-BUET CSE", institution: "Technical University of Munich", fieldOfStudy: "Informatics", languages: ["Bangla", "English", "German"], gender: "woman", showGender: true });
   await db().update(users).set({ totpSecretEnc: encryptField(mentorSecret, `totp:${mentor.id}`), totpEnabledAt: new Date() }).where(eq(users.id, mentor.id));
   const student = await mk(DEMO_EMAIL.student, DEMO_STUDENT.username, DEMO_STUDENT.displayName, {}, { headline: "EEE, RUET · aiming for an MSc abroad", institution: "RUET" });
-  const helper = await mk("helper@peerlink.local", "tanvir_mext", "Tanvir Hasan", { trustLevel: 2 }, { headline: "MEXT scholar, Tohoku University" });
+  const helper = await mk("helper@peerlink.local", "tanvir_mext", "Tanvir Hasan", {}, { headline: "MEXT scholar, Tohoku University" });
 
   await db().insert(mentorProfiles).values({
     userId: mentor.id,
@@ -92,13 +93,13 @@ async function main() {
   // ── Richer demo community (so the product looks alive in demos) ─────────────
   const days = (n: number) => new Date(Date.now() - n * 86400_000);
   const inDays = (n: number) => new Date(Date.now() + n * 86400_000).toISOString().slice(0, 10);
-  const farhan = await mk("farhan@peerlink.local", "farhan_utokyo", "Farhan Kabir", { trustLevel: 3 }, { headline: "PhD candidate, University of Tokyo · MEXT scholar", institution: "University of Tokyo", fieldOfStudy: "Materials Science", languages: ["Bangla", "English", "Japanese"] });
-  const sadia = await mk("sadia@peerlink.local", "sadia_dev", "Sadia Islam", { trustLevel: 2 }, { headline: "Software Engineer · ex-BRAC University CSE", institution: "BRAC University", fieldOfStudy: "Computer Science", languages: ["Bangla", "English"], gender: "woman", showGender: true });
-  const arif = await mk("arif@peerlink.local", "arif_uoft", "Arif Hossain", { trustLevel: 2 }, { headline: "MEng, University of Toronto · ex-KUET EEE", institution: "University of Toronto", fieldOfStudy: "Electrical Engineering", languages: ["Bangla", "English"] });
-  const nadia = await mk("nadia@peerlink.local", "nadia_cu", "Nadia Rahman", { trustLevel: 1, daysVisited: 6 }, { headline: "Chemistry, University of Chittagong", institution: "University of Chittagong" });
-  const tamim = await mk("tamim@peerlink.local", "tamim_hsc", "Tamim Chowdhury", { trustLevel: 1, daysVisited: 4 }, { headline: "Preparing for university admission tests" });
-  const applicant = await mk("applicant@peerlink.local", "rumana_lund", "Rumana Akter", { trustLevel: 2 }, { headline: "MSc Sustainability, Lund University" });
-  const scammy = await mk("visa.fast@peerlink.local", "visa_fast_bd", "Visa Fast BD", { trustLevel: 0, daysVisited: 1, createdAt: days(1) });
+  const farhan = await mk("farhan@peerlink.local", "farhan_utokyo", "Farhan Kabir", {}, { headline: "PhD candidate, University of Tokyo · MEXT scholar", institution: "University of Tokyo", fieldOfStudy: "Materials Science", languages: ["Bangla", "English", "Japanese"] });
+  const sadia = await mk("sadia@peerlink.local", "sadia_dev", "Sadia Islam", {}, { headline: "Software Engineer · ex-BRAC University CSE", institution: "BRAC University", fieldOfStudy: "Computer Science", languages: ["Bangla", "English"], gender: "woman", showGender: true });
+  const arif = await mk("arif@peerlink.local", "arif_uoft", "Arif Hossain", {}, { headline: "MEng, University of Toronto · ex-KUET EEE", institution: "University of Toronto", fieldOfStudy: "Electrical Engineering", languages: ["Bangla", "English"] });
+  const nadia = await mk("nadia@peerlink.local", "nadia_cu", "Nadia Rahman", { daysVisited: 6 }, { headline: "Chemistry, University of Chittagong", institution: "University of Chittagong" });
+  const tamim = await mk("tamim@peerlink.local", "tamim_hsc", "Tamim Chowdhury", { daysVisited: 4 }, { headline: "Preparing for university admission tests" });
+  const applicant = await mk("applicant@peerlink.local", "rumana_lund", "Rumana Akter", {}, { headline: "MSc Sustainability, Lund University" });
+  const scammy = await mk("visa.fast@peerlink.local", "visa_fast_bd", "Visa Fast BD", { daysVisited: 1, createdAt: days(1) });
   await db().insert(posts).values({ authorId: scammy.id, topicId: await tid("student-visa"), type: "discussion", title: "100% visa guarantee for Canada — contact WhatsApp", body: "100% visa guarantee for Canada, no IELTS. Pay advance processing fee to our bKash 01712345678 and WhatsApp us.", status: "held", riskScore: 100, riskSignals: [{ code: "GUARANTEED_OUTCOME", weight: 25 }, { code: "ADVANCE_FEE", weight: 30 }, { code: "SCAM_SIGNATURE_COMBINATION", weight: 60 }] });
 
   for (const [u, headline, topicSlugs, credentials, scope, coi, cap] of [
@@ -192,6 +193,13 @@ async function main() {
     { userId: student.id, kind: "booking_accepted", title: "Your session request was accepted", link: "/bookings", createdAt: days(0.2) },
     { userId: student.id, kind: "answer", title: "Someone answered your post", link: "/feed", createdAt: days(0.5) },
   ]);
+
+  // Trust levels are earned, never granted: store what each member's seeded activity earns, exactly as the daily
+  // recompute would (the founder keeps TL4 as an appointed leader).
+  for (const u of await db().select({ id: users.id }).from(users)) {
+    const inputs = await gatherTrustInputs(u.id);
+    if (inputs) await db().update(users).set({ trustLevel: computeTrustLevel(inputs) }).where(eq(users.id, u.id));
+  }
 
   console.log("demo data seeded");
   console.log(`  ${DEMO_EMAIL.admin}  TOTP secret: ${adminSecret}`);

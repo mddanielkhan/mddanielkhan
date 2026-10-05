@@ -102,6 +102,16 @@ describe("trust level explanations", () => {
     expect(explainTrustLevel({ ...tl3, upheldReportsFiled: 3 }).next).toBeNull();
     expect(explainTrustLevel({ ...blank, appointedLeader: true }).currentName).toBe("Leader");
   });
+  it("anchors the explanation to the level the member holds", () => {
+    // Stored levels change at the daily recompute, so live inputs can be ahead of (or behind) them.
+    const ahead = explainTrustLevel(tl2, 1);
+    expect(ahead).toMatchObject({ current: 1, currentName: "Basic", next: { level: 2 }, promotionPending: true });
+    const behind = explainTrustLevel(tl1, 2);
+    expect(behind).toMatchObject({ current: 2, currentName: "Member", next: { level: 3 }, promotionPending: false });
+    expect(explainTrustLevel(tl1, 1).promotionPending).toBe(false);
+    expect(explainTrustLevel(tl3, 3).next).toBeNull();
+    expect(explainTrustLevel(blank, 4)).toMatchObject({ currentName: "Leader", next: null, promotionPending: false });
+  });
   it("names levels", () => {
     expect([0, 1, 2, 3, 4, 9].map(trustLevelName)).toEqual(["New", "Basic", "Member", "Regular", "Leader", "New"]);
   });

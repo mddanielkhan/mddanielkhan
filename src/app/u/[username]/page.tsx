@@ -41,7 +41,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pa
   const [badges, mentor, posts, byTopic] = await Promise.all([activeBadges(user.id), getMentorProfile(user.id), postsByAuthor(user.id, 10), reputationByTopic(user.id)]);
   const mentorLive = mentor?.status === "approved" && !!user.totpEnabledAt;
   const [offerings, stats] = mentorLive ? await Promise.all([listOfferings(user.id), mentorStats(user.id)]) : [[], null];
-  const trust = isSelf ? explainTrustLevel((await gatherTrustInputs(user.id))!) : null;
+  const trust = isSelf ? explainTrustLevel((await gatherTrustInputs(user.id))!, user.trustLevel) : null;
   const here = `/u/${user.username}`;
   const topicRep = byTopic.filter((t) => t.topicId);
   const maxRep = Math.max(1, ...topicRep.map((t) => t.points));
@@ -112,7 +112,11 @@ export default async function ProfilePage({ params, searchParams }: { params: Pa
           ) : null}
 
           {trust?.next ? (
-            <Panel title={`Your next trust level: TL${trust.next.level} · ${trust.next.name}`} description={`You're TL${trust.current} · ${trust.currentName}. Trust levels unlock privileges and are earned by behaviour — they can't be bought.`}>
+            <Panel title={`Your next trust level: TL${trust.next.level} · ${trust.next.name}`} description={
+              trust.promotionPending
+                ? `You're TL${trust.current} · ${trust.currentName} and you now meet every requirement below. Your new level appears within a day.`
+                : `You're TL${trust.current} · ${trust.currentName}. Trust levels unlock privileges and are earned by behaviour — they can't be bought.`
+            }>
               <ul className="space-y-2.5 text-sm">
                 {trust.next.requirements.map((r) => (
                   <li key={r.label} className="flex items-start gap-2.5">
