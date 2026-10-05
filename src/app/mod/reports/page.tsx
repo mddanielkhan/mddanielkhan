@@ -5,7 +5,7 @@ import { REASON_LABELS, SLA_HOURS } from "@/lib/reports/service";
 import { ActionButton, Form } from "@/components/form";
 import { ModNav } from "@/components/mod-nav";
 import { UserActionForm } from "@/components/user-action-form";
-import { Card, EmptyState, Flash, PageHeader, Pill, TextField, formatDateTime } from "@/components/ui";
+import { Card, EmptyState, Flash, PageHeader, Pill, formatDateTime } from "@/components/ui";
 import type { SearchParams } from "@/lib/http/page";
 
 export const metadata = { title: "Reports", robots: { index: false } };
@@ -52,9 +52,14 @@ export default async function ReportsPage({ searchParams }: { searchParams: Sear
                   </ActionButton>
                 ) : null}
                 {r.targetUserId ? <UserActionForm userId={r.targetUserId} back="/mod/reports" reportId={r.id} /> : null}
-                <Form action="/api/mod/reports/resolve" back="/mod/reports" className="flex flex-wrap items-end gap-2">
+                <Form action="/api/mod/reports/resolve" back="/mod/reports" className="flex flex-wrap items-center gap-2">
                   <input type="hidden" name="reportId" value={r.id} />
-                  <TextField label="Note" name="note" maxLength={500} />
+                  <label className="sr-only" htmlFor={`note-${r.id}`}>
+                    Resolution note
+                  </label>
+                  <div className="w-64 max-w-full">
+                    <input id={`note-${r.id}`} name="note" maxLength={500} className="input" placeholder="Resolution note (optional)" />
+                  </div>
                   <button className="btn btn-secondary" type="submit" name="resolution" value="dismiss">
                     Dismiss
                   </button>

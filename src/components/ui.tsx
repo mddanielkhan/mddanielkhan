@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ERRORS, NOTICES, errorMessage } from "@/lib/i18n/messages";
+import { ERRORS, NOTICES, NOTICE_TONES, errorMessage } from "@/lib/i18n/messages";
 import { trustLevelName } from "@/lib/trust/trust-level";
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
@@ -42,7 +42,7 @@ export function Flash({ searchParams }: { searchParams?: Record<string, string |
   const ref = typeof searchParams?.ref === "string" && /^[0-9a-f]{8}$/.test(searchParams.ref) ? searchParams.ref : undefined;
   return (
     <>
-      {n && NOTICES[n] ? <Notice tone="success">{NOTICES[n]}</Notice> : null}
+      {n && NOTICES[n] ? <Notice tone={NOTICE_TONES[n] ?? "success"}>{NOTICES[n]}</Notice> : null}
       {e ? (
         <Notice tone="danger">
           {ERRORS[e] ?? errorMessage(e)}

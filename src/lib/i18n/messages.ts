@@ -114,6 +114,15 @@ export const NOTICES: Record<string, string> = {
   locale_changed: "Language updated.",
 };
 
+/** Notices that report an outcome the member didn't hope for get a calmer or warning tone instead of "success". */
+export const NOTICE_TONES: Record<string, "info" | "warn"> = {
+  post_flagged: "info",
+  post_held: "info",
+  post_rejected: "warn",
+  answer_held: "info",
+  message_held: "info",
+};
+
 /** Errors (?e=code). Unknown codes fall back to a generic message. */
 export const ERRORS: Record<string, string> = {
   invalid_credentials: "Email or password is incorrect.",
