@@ -6,7 +6,7 @@ const PUBLIC_PAGES = ["/", "/feed", "/mentors", "/opportunities", "/safety", "/g
 test("public pages render with no CSP violations or script errors", async ({ page }) => {
   const problems = watchForErrors(page);
   for (const path of PUBLIC_PAGES) {
-    const res = await page.goto(path);
+    const res = await page.goto(path, { waitUntil: "networkidle" });
     expect(res?.status(), path).toBe(200);
     await expect(page.locator("main")).toBeVisible();
   }

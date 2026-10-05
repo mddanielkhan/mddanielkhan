@@ -13,7 +13,7 @@ This repository is the complete, working **Phase 1**. It is the improved and ver
 |---|---|
 | Stack | Next.js 16.3.8 · React 19 · TypeScript (strict) · PostgreSQL 16+ · Drizzle ORM · Tailwind CSS 4 |
 | Size | 46 pages · 57 API routes (all through one security pipeline) · 30 tables · background worker |
-| Tests | 235 unit + integration (real Postgres) · 11 Playwright E2E (production build, desktop + mobile) · coverage gates |
+| Tests | 235 unit + integration (real Postgres) · 12 Playwright E2E (production build, desktop + mobile, every role) · coverage gates |
 | Security | Argon2id · opaque sessions · TOTP 2FA (mandatory for mentors and staff) · nonce CSP · signed CSRF · central deny-by-default policy · hash-chained audit log · least-privilege DB roles |
 | Runs on | One small VPS behind Cloudflare (~$10–25/month), Docker Compose, Caddy |
 

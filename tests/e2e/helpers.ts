@@ -33,6 +33,8 @@ export function lastMail(to: string, kind?: string): { subject: string; text: st
   return null;
 }
 
+const usedTotpSteps = new Map<string, number>();
+
 export async function login(page: Page, email: string, password = DEMO_PASSWORD, totpSecret?: string) {
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);
@@ -40,6 +42,12 @@ export async function login(page: Page, email: string, password = DEMO_PASSWORD,
   await page.getByRole("button", { name: "Log in" }).click();
   if (totpSecret) {
     await expect(page).toHaveURL(/\/login\/2fa/);
+    // The server refuses a code that was already used (replay protection), so a second login by the same account
+    // within one 30-second step must wait for the next code.
+    const step = Math.floor(Date.now() / 30000);
+    const last = usedTotpSteps.get(totpSecret);
+    if (last !== undefined && last >= step) await page.waitForTimeout(30000 - (Date.now() % 30000) + 250);
+    usedTotpSteps.set(totpSecret, Math.floor(Date.now() / 30000));
     await page.getByLabel(/6-digit code/).fill(totp(totpSecret));
     await page.getByRole("button", { name: "Verify" }).click();
   }
@@ -54,4 +62,28 @@ export function watchForErrors(page: Page) {
     if (m.type() === "error" && /Content Security Policy|Refused to/i.test(m.text())) problems.push(`csp: ${m.text()}`);
   });
   return problems;
+}
+
+/**
+ * Visit each path, wait for hydration to settle, and collect any script errors.
+ * Server-rendered pages hydrate too, so invalid HTML nesting (a <form> or <details> inside a <p>) surfaces here as a
+ * hydration error even though the page looks fine.
+ */
+export async function visitAll(page: Page, paths: string[]) {
+  const problems = watchForErrors(page);
+  const report: string[] = [];
+  for (const path of paths) {
+    const before = problems.length;
+    const res = await page.goto(path, { waitUntil: "networkidle" });
+    expect(res?.status(), path).toBe(200);
+    await expect(page.locator("main"), path).toBeVisible();
+    for (const p of problems.slice(before)) report.push(`${path}: ${p}`);
+  }
+  return report;
+}
+
+/** Same-origin hrefs on the current page that start with `prefix`, de-duplicated. */
+export async function hrefs(page: Page, prefix: string): Promise<string[]> {
+  const all = await page.locator(`a[href^="${prefix}"]`).evaluateAll((els) => els.map((e) => e.getAttribute("href") ?? ""));
+  return [...new Set(all.filter(Boolean))];
 }

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { ADMIN_TOTP, MENTOR_TOTP } from "./fixtures";
-import { lastMail, login, watchForErrors } from "./helpers";
+import { hrefs, lastMail, login, visitAll, watchForErrors } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
 
@@ -104,4 +104,32 @@ test("cross-site form posts are rejected (CSRF)", async ({ request }) => {
   expect(res.headers()["location"]).toMatch(/e=cross_site_request/);
   const noToken = await request.post("/api/auth/login", { form: { email: "a@b.co", password: "x" }, headers: { origin: "http://localhost:3100" }, maxRedirects: 0 });
   expect(noToken.headers()["location"]).toMatch(/e=csrf_failed/);
+});
+
+test("signed-in pages hydrate cleanly for students, mentors and staff", async ({ browser }) => {
+  // ~30 pages, each waiting for network idle, plus up to one 30 s wait for a fresh TOTP step per 2FA account.
+  test.setTimeout(180_000);
+  const roles: Array<[string, string | undefined, string[]]> = [
+    ["student@shikor.local", undefined, ["/feed", "/notifications", "/bookings", "/posts/new", "/u/nusrat_tum", "/settings", "/settings/security", "/settings/privacy", "/mentors/apply"]],
+    ["mentor@shikor.local", MENTOR_TOTP, ["/mentor", "/bookings", "/notifications", "/settings/security"]],
+    ["admin@shikor.local", ADMIN_TOTP, ["/mod", "/mod/queue", "/mod/reports", "/mod/mentors", "/mod/users", "/mod/appeals", "/mod/disputes", "/mod/audit", "/mod/settings"]],
+  ];
+  for (const [email, secret, paths] of roles) {
+    const ctx = await browser.newContext();
+    const page = await ctx.newPage();
+    await login(page, email, undefined, secret);
+    // Pages with per-item content: every session the account can see, a post, and a booking form.
+    await page.goto("/bookings");
+    const extra = await hrefs(page, "/bookings/");
+    await page.goto("/feed");
+    extra.push(...(await hrefs(page, "/posts/")).filter((h) => /^\/posts\/[0-9a-f-]{36}$/.test(h)).slice(0, 3));
+    if (email.startsWith("student")) {
+      await page.goto("/u/nusrat_tum");
+      extra.push(...(await hrefs(page, "/book/")).slice(0, 1));
+    }
+    expect(extra.length, email).toBeGreaterThan(0);
+    const problems = await visitAll(page, [...paths, ...extra]);
+    expect(problems, email).toEqual([]);
+    await ctx.close();
+  }
 });

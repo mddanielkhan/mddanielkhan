@@ -160,9 +160,9 @@ export default async function BookingPage({ params, searchParams }: { params: Pa
       </section>
 
       {party ? (
-        <p className="text-sm">
+        <div className="text-sm">
           Something wrong? <ReportControl targetType="booking" targetId={b.id} back={here} />
-        </p>
+        </div>
       ) : null}
     </div>
   );
