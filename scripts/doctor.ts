@@ -14,6 +14,13 @@ import { sql } from "drizzle-orm";
 import { createTransport } from "nodemailer";
 import { banner, c, heading, line, type Status } from "@/lib/cli/terminal";
 
+/** PostgreSQL SQLSTATE of a failed query; drizzle wraps the driver error in `cause`. */
+function pgErrorCode(err: unknown): string | undefined {
+  const e = err as { code?: unknown; cause?: { code?: unknown } } | null;
+  const code = e?.code ?? e?.cause?.code;
+  return typeof code === "string" ? code : undefined;
+}
+
 const results: Status[] = [];
 const report = (status: Status, label: string, detail?: string) => {
   results.push(status);
@@ -73,10 +80,19 @@ async function main() {
     const applied = await db()
       .execute<{ n: number }>(sql`select count(*)::int as n from drizzle.__drizzle_migrations`)
       .then((r) => r.rows[0]!.n)
-      .catch(() => 0);
-    const pending = journal.entries.length - applied;
-    report(pending === 0 ? "ok" : "fail", pending === 0 ? `Schema up to date (${applied} migrations)` : `${pending} migration(s) not applied`, pending === 0 ? undefined : "run `npm run db:migrate`");
-    if (pending > 0) return;
+      .catch((err: unknown) => {
+        const code = pgErrorCode(err);
+        if (code === "42501") return null; // owner-only bookkeeping: expected when connected as the app role
+        if (code === "42P01" || code === "3F000") return 0; // never migrated
+        throw err;
+      });
+    if (applied === null) {
+      report("info", "Migration history not visible to this role", "it is owner-only; the migrate job applies migrations before the app starts");
+    } else {
+      const pending = journal.entries.length - applied;
+      report(pending === 0 ? "ok" : "fail", pending === 0 ? `Schema up to date (${applied} migrations)` : `${pending} migration(s) not applied`, pending === 0 ? undefined : "run `npm run db:migrate`");
+      if (pending > 0) return;
+    }
 
     const topics = await db().execute<{ n: number }>(sql`select count(*)::int as n from topics`);
     report(topics.rows[0]!.n > 0 ? "ok" : "warn", `${topics.rows[0]!.n} topics`, topics.rows[0]!.n > 0 ? undefined : "run `npm run db:seed -- --topics-only`");
