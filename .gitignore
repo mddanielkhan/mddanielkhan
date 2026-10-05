@@ -1,0 +1,29 @@
+# dependencies
+node_modules/
+# build output
+.next/
+dist/
+out/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+next-env.d.ts
+# secrets — never commit a filled-in env file
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.age
+# local data
+.pgdata/
+backups/
+*.dump
+*.sql.gz
+# OS / editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.log

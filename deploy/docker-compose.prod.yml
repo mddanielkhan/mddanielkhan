@@ -1,0 +1,111 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Production: single VPS, Docker Compose, behind Cloudflare. ≈ $10–25/month.
+#
+#   docker compose -f deploy/docker-compose.prod.yml --env-file /etc/shikor/shikor.env up -d
+#
+# Hardening (each line is a control, not decoration):
+#  • Only Caddy publishes ports (80/443). Postgres is on an internal network only.
+#  • App & worker run as non-root, read-only root FS, no-new-privileges, all caps dropped.
+#  • App connects as `shikor_app` (DML only; cannot rewrite the audit log).
+#    Migrations run as `shikor_owner` in a one-shot job.
+#  • Backups run from a separate container with their own credentials.
+#  • Firewall the host so 80/443 accept Cloudflare IPs only (deploy/firewall-cloudflare.sh),
+#    otherwise attackers can bypass the edge and spoof CF-Connecting-IP.
+# ─────────────────────────────────────────────────────────────────────────────
+x-app: &app
+  image: ${SHIKOR_IMAGE:-shikor:latest}
+  restart: unless-stopped
+  read_only: true
+  tmpfs: ["/tmp"]
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: ["ALL"]
+  env_file: /etc/shikor/shikor.env
+  environment:
+    NODE_ENV: production
+    DATABASE_URL: postgres://shikor_app:${APP_DB_PASSWORD}@postgres:5432/shikor
+    TRUSTED_IP_HEADER: cf-connecting-ip
+  networks: [data]
+  depends_on:
+    postgres: { condition: service_healthy }
+    migrate: { condition: service_completed_successfully }
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD}
+      POSTGRES_DB: postgres
+    volumes: [pgdata:/var/lib/postgresql/data]
+    networks: [data]
+    shm_size: 256mb
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      retries: 10
+    deploy: { resources: { limits: { memory: 1g } } }
+
+  migrate:
+    image: ${SHIKOR_IMAGE:-shikor:latest}
+    command: ["node", "scripts/migrate.mjs"]
+    environment:
+      DATABASE_URL: postgres://shikor_owner:${OWNER_DB_PASSWORD}@postgres:5432/shikor
+      GRANT_APP_ROLE: "true"
+    networks: [data]
+    depends_on: { postgres: { condition: service_healthy } }
+    restart: "no"
+
+  app:
+    <<: *app
+    command: ["node", "server.js"]
+    networks: [data, web]
+    deploy: { resources: { limits: { memory: 768m } } }
+
+  worker:
+    <<: *app
+    command: ["node", "dist/worker.mjs"]
+    healthcheck: { disable: true }
+    deploy: { resources: { limits: { memory: 384m } } }
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN}
+    networks: [web]
+    depends_on: [app]
+
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/backup/backup-loop.sh"]
+    environment:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: ${POSTGRES_SUPERUSER_PASSWORD}
+      PGDATABASE: shikor
+      AGE_RECIPIENT: ${BACKUP_AGE_RECIPIENT}
+      RCLONE_REMOTE: ${BACKUP_RCLONE_REMOTE}
+      RCLONE_CONFIG: /backup/rclone.conf
+      RETENTION_DAYS: "30"
+    volumes:
+      - ./backup:/backup:ro
+      - backups:/var/backups/shikor
+    networks: [data]
+
+networks:
+  data: { internal: true }
+  web: {}
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
+  backups:

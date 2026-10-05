@@ -1,0 +1,21 @@
+# Local development services. Start with: docker compose up -d
+# App runs on the host (npm run dev) so you get hot reload.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: shikor
+      POSTGRES_PASSWORD: shikor
+      POSTGRES_DB: shikor
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data, ./deploy/postgres/dev-init.sql:/docker-entrypoint-initdb.d/10-dev-init.sql:ro]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shikor"]
+      interval: 5s
+      retries: 10
+  mailpit:
+    # Catches all outgoing email in development: http://localhost:8025
+    image: axllent/mailpit:latest
+    ports: ["127.0.0.1:8025:8025", "127.0.0.1:1025:1025"]
+volumes:
+  pgdata:

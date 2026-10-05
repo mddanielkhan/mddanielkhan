@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /api/
+Disallow: /settings
+Disallow: /bookings
+Disallow: /mod
+Disallow: /notifications
+Allow: /
