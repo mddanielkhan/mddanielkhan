@@ -8,7 +8,7 @@ import { migrate } from "drizzle-orm/node-postgres/migrator";
 import pg from "pg";
 
 async function main() {
-  const url = process.env.DATABASE_URL ?? "postgres://shikor:shikor@localhost:5432/shikor";
+  const url = process.env.DATABASE_URL ?? "postgres://peerlink:peerlink@localhost:5432/peerlink";
   const pool = new pg.Pool({ connectionString: url, max: 1 });
   try {
     await migrate(drizzle(pool), { migrationsFolder: "./drizzle" });

@@ -5,7 +5,7 @@
  * `g u a r a n t e e d`, Cyrillic look-alikes, zero-width spaces, full-width
  * letters, or Banglish. We normalise those away before matching.
  *
- * LESSON FROM THE PREVIOUS BLUEPRINT (Shikor v1): it mapped ordinary English
+ * LESSON FROM THE EARLIER "SHIKOR" BLUEPRINT: it mapped ordinary English
  * words ("copy", "fake", "bank", "job", "proxy") onto Bangla scam keywords and
  * then HARD-BLOCKED on single words — so "Can I submit a scanned copy of my HSC
  * certificate?" and "How much bank statement do I need for a German visa?" were

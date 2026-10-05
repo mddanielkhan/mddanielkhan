@@ -1,6 +1,9 @@
-# Shikor (শিকড়) — Consolidated Blueprint v3
+# PeerLink — Consolidated Blueprint v3
 
 ### The improved, verified version of the Pathshala and Shikor blueprints
+
+> **Naming.** PeerLink is the product. "Pathshala" and "Shikor" always mean the two earlier blueprint documents this
+> one audits and replaces (§2).
 
 **Status:** Phase 1 built, tested, deployable · **Date:** 5 October 2026 · **Market:** Bangladesh first (web/PWA, Bangla + English)
 
@@ -63,7 +66,7 @@ Nobody may ask anyone for money. Phase 1 is free.
 
 ## 2. What was wrong with the earlier blueprints — verified errata
 
-I audited both documents you provided. For Shikor I also extracted all 87 files from the single-file edition and ran
+I audited both documents you provided. For the Shikor blueprint I also extracted all 87 files from the single-file edition and ran
 them. Everything below was **reproduced or checked in this session**, not assumed. Each finding has a fix in this
 repository.
 
@@ -287,7 +290,7 @@ Browser ──HTTPS──▶ Cloudflare (WAF, DDoS, bot) ──▶ Caddy (TLS, b
                  → audit (hash chain, same transaction) → 303 redirect / JSON
 ```
 
-Cookies: `__Host-shikor_sid` (HttpOnly, Secure, SameSite=Lax, Path=/) and `__Host-shikor_csrf`.
+Cookies: `__Host-peerlink_sid` (HttpOnly, Secure, SameSite=Lax, Path=/) and `__Host-peerlink_csrf`.
 
 ### 7.3 Data protection by design
 
@@ -326,7 +329,7 @@ see policy-level reasons, never patterns, and can edit or **ask for a human revi
 ruleset version.
 
 **Calibration:** `tests/unit/risk-engine.test.ts` requires 40 benign student questions (English, Bangla, Banglish,
-including those Shikor blocked) to produce **zero holds** and ≤ 15 % flags, and 16 scam posts (including
+including those the Shikor blueprint blocked) to produce **zero holds** and ≤ 15 % flags, and 16 scam posts (including
 full-width-Unicode and leetspeak evasions) to all be held or rejected.
 
 Crisis language ("I want to die", "আত্মহত্যা") **never penalises**. The author gets private support resources and staff
@@ -388,8 +391,8 @@ stateful service.
 - lower-case email and username-format checks
 - append-only triggers on `audit_log` / `reputation_events`
 
-**Least privilege:** the app runs as `shikor_app` (DML only, no UPDATE/DELETE on the audit log, can't disable
-triggers). Migrations run as `shikor_owner`. Verified live in this session (§SETUP).
+**Least privilege:** the app runs as `peerlink_app` (DML only, no UPDATE/DELETE on the audit log, can't disable
+triggers). Migrations run as `peerlink_owner`. Verified live in this session (§SETUP).
 
 ---
 

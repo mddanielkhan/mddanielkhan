@@ -51,7 +51,7 @@ export const email = z.string().trim().toLowerCase().max(254).pipe(z.email("Ente
 
 const RESERVED_USERNAMES = new Set([
   "admin", "administrator", "moderator", "mod", "support", "help", "staff", "team", "official", "system", "root", "security",
-  "verify", "verified", "shikor", "api", "www", "mail", "null", "undefined", "anonymous", "deleted", "grievance", "legal", "abuse",
+  "verify", "verified", "peerlink", "peer_link", "api", "www", "mail", "null", "undefined", "anonymous", "deleted", "grievance", "legal", "abuse",
 ]);
 
 export const username = z
@@ -60,10 +60,10 @@ export const username = z
   .toLowerCase()
   .regex(/^[a-z0-9_]{3,24}$/, "3–24 characters: lowercase letters, numbers, underscore")
   // Prefix rules are narrow on purpose: "mod_x" is reserved, but Bangla names like "modhu" or "moduli" are not.
-  .refine((u) => !RESERVED_USERNAMES.has(u) && !/^(?:shikor|admin|support|official)|^mod(?:erator)?(?:[_\d]|$)/.test(u), "This username is reserved");
+  .refine((u) => !RESERVED_USERNAMES.has(u) && !/^(?:peer_?link|admin|support|official)|^mod(?:erator)?(?:[_\d]|$)/.test(u), "This username is reserved");
 
 /** Display names must not impersonate staff or carry badge-like symbols (an impersonation vector). */
-const IMPERSONATION = /\b(?:official|verified|admin|administrator|moderator|support|staff|shikor team|customer care)\b|শিকড় টিম|অফিসিয়াল/iu;
+const IMPERSONATION = /\b(?:official|verified|admin|administrator|moderator|support|staff|peer ?link team|customer care)\b|পিয়ারলিংক টিম|অফিসিয়াল/iu;
 const BADGE_SYMBOLS = /[✓✔☑✅\u{1F6E1}\u{1F396}\u{1F3C5}\u{1F947}⭐\u{1F31F}\u{1F512}]/u;
 
 export const displayName = text(2, 60).refine((n) => !IMPERSONATION.test(n), "Display names cannot include words like 'official', 'verified' or 'support'")

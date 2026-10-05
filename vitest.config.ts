@@ -4,7 +4,7 @@ import path from "node:path";
 /**
  * Two projects:
  *  - unit: pure logic (risk engine, trust maths, state machine, policy, crypto). No I/O.
- *  - integration: services against a real PostgreSQL (DATABASE_URL, default shikor_test).
+ *  - integration: services against a real PostgreSQL (DATABASE_URL, default peerlink_test).
  *
  * Coverage thresholds on security-critical modules are a CONTROL, not a vanity
  * metric: lowering them to make a build pass is not allowed — add the test.

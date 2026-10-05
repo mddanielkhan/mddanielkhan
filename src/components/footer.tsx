@@ -66,7 +66,7 @@ export function Footer({ locale }: { locale: Locale }) {
         </div>
         <div className="mt-12 flex flex-col gap-3 border-t border-line pt-6 text-sm text-muted lg:flex-row lg:items-center lg:justify-between">
           <p>
-            © {new Date().getFullYear()} {BRAND.name} (<span lang="bn">{BRAND.nameBn}</span>) · {t(locale, "footer_no_ads")}
+            © {new Date().getFullYear()} {BRAND.name} · {t(locale, "footer_no_ads")}
           </p>
           <p>
             {t(locale, "footer_grievance")}: {e.GRIEVANCE_OFFICER_NAME} · <a href={`mailto:${e.GRIEVANCE_OFFICER_EMAIL}`}>{e.GRIEVANCE_OFFICER_EMAIL}</a>

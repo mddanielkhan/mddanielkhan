@@ -1,28 +1,28 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # Production: single VPS, Docker Compose, behind Cloudflare. ≈ $10–25/month.
 #
-#   docker compose -f deploy/docker-compose.prod.yml --env-file /etc/shikor/shikor.env up -d
+#   docker compose -f deploy/docker-compose.prod.yml --env-file /etc/peerlink/peerlink.env up -d
 #
 # Hardening (each line is a control, not decoration):
 #  • Only Caddy publishes ports (80/443). Postgres is on an internal network only.
 #  • App & worker run as non-root, read-only root FS, no-new-privileges, all caps dropped.
-#  • App connects as `shikor_app` (DML only; cannot rewrite the audit log).
-#    Migrations run as `shikor_owner` in a one-shot job.
+#  • App connects as `peerlink_app` (DML only; cannot rewrite the audit log).
+#    Migrations run as `peerlink_owner` in a one-shot job.
 #  • Backups run from a separate container with their own credentials.
 #  • Firewall the host so 80/443 accept Cloudflare IPs only (deploy/firewall-cloudflare.sh),
 #    otherwise attackers can bypass the edge and spoof CF-Connecting-IP.
 # ─────────────────────────────────────────────────────────────────────────────
 x-app: &app
-  image: ${SHIKOR_IMAGE:-shikor:latest}
+  image: ${PEERLINK_IMAGE:-peerlink:latest}
   restart: unless-stopped
   read_only: true
   tmpfs: ["/tmp"]
   security_opt: ["no-new-privileges:true"]
   cap_drop: ["ALL"]
-  env_file: /etc/shikor/shikor.env
+  env_file: /etc/peerlink/peerlink.env
   environment:
     NODE_ENV: production
-    DATABASE_URL: postgres://shikor_app:${APP_DB_PASSWORD}@postgres:5432/shikor
+    DATABASE_URL: postgres://peerlink_app:${APP_DB_PASSWORD}@postgres:5432/peerlink
     TRUSTED_IP_HEADER: cf-connecting-ip
   networks: [data]
   depends_on:
@@ -48,10 +48,10 @@ services:
     deploy: { resources: { limits: { memory: 1g } } }
 
   migrate:
-    image: ${SHIKOR_IMAGE:-shikor:latest}
+    image: ${PEERLINK_IMAGE:-peerlink:latest}
     command: ["node", "scripts/migrate.mjs"]
     environment:
-      DATABASE_URL: postgres://shikor_owner:${OWNER_DB_PASSWORD}@postgres:5432/shikor
+      DATABASE_URL: postgres://peerlink_owner:${OWNER_DB_PASSWORD}@postgres:5432/peerlink
       GRANT_APP_ROLE: "true"
     networks: [data]
     depends_on: { postgres: { condition: service_healthy } }
@@ -90,14 +90,14 @@ services:
       PGHOST: postgres
       PGUSER: postgres
       PGPASSWORD: ${POSTGRES_SUPERUSER_PASSWORD}
-      PGDATABASE: shikor
+      PGDATABASE: peerlink
       AGE_RECIPIENT: ${BACKUP_AGE_RECIPIENT}
       RCLONE_REMOTE: ${BACKUP_RCLONE_REMOTE}
       RCLONE_CONFIG: /backup/rclone.conf
       RETENTION_DAYS: "30"
     volumes:
       - ./backup:/backup:ro
-      - backups:/var/backups/shikor
+      - backups:/var/backups/peerlink
     networks: [data]
 
 networks:

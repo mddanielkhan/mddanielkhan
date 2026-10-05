@@ -29,7 +29,7 @@ and services call `assertAllowed()` again. A CI test fails the build if a route 
 **Why.** Broken access control is OWASP A01:2025. Central and tested beats scattered and hoped-for.
 **Rejected.** Auth in middleware/proxy: Next.js shipped several proxy-bypass advisories in 2026.
 
-## ADR-004 — PostgreSQL for queue, rate limits and search in Phase 1 (supersedes Shikor's Redis/BullMQ/MinIO stack)
+## ADR-004 — PostgreSQL for queue, rate limits and search in Phase 1 (supersedes the Shikor blueprint's Redis/BullMQ/MinIO stack)
 
 **Decision.** `FOR UPDATE SKIP LOCKED` jobs, atomic UPSERT rate limits, `tsvector` + GIN full-text search
 (`simple` config, which is safe for Bangla).
@@ -49,7 +49,7 @@ CVEs targeted Server Action endpoints. CSRF is handled uniformly.
 **Decision.** Intent-pattern signals + combinations + policy gates. Automatic rejection only for high-precision
 combinations; everything ambiguous is **held for a human**. A benign corpus is part of CI.
 **Why.** Explainable to moderators, appellants and regulators; no training data needed. Over-blocking harms the people
-we protect (Shikor's engine blocked ordinary visa questions).
+we protect (the Shikor blueprint's engine blocked ordinary visa questions).
 **Review when.** More than 2,000 labelled moderation decisions exist. Add an ML scorer in shadow mode, and only cut
 over if it beats the rules at equal recall.
 
@@ -61,7 +61,7 @@ evidence. 18+ by attestation; no birthdate is stored.
 localisation and breach duties. Data you don't hold can't leak.
 **Review when.** Phase 1.5 guardian-consent design is approved by counsel.
 
-## ADR-008 — No money in Phase 1; escrow only through a licensed PSP after a legal opinion (supersedes Pathshala's merchant-account escrow and Shikor's redeemable credits)
+## ADR-008 — No money in Phase 1; escrow only through a licensed PSP after a legal opinion (supersedes Pathshala's merchant-account escrow and the Shikor blueprint's redeemable credits)
 
 **Decision.** Sessions are free, and a database constraint enforces `price_bdt = 0`. No stored-value credits.
 **Why.** Holding client funds or redeemable credits likely needs Bangladesh Bank licensing. "Free" also removes the

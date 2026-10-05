@@ -44,17 +44,23 @@ describe("post form", () => {
 describe("identity fields", () => {
   it("blocks reserved and impersonating usernames/display names", () => {
     expect(username.safeParse("admin").success).toBe(false);
-    expect(username.safeParse("shikor_support").success).toBe(false);
-    expect(username.safeParse("Rafi_RUET").data).toBe("rafi_ruet");
+    expect(username.safeParse("peerlink_support").success).toBe(false);
+    expect(username.safeParse("Raima_RUET").data).toBe("raima_ruet");
     expect(username.safeParse("mod_team").success).toBe(false);
     expect(username.safeParse("moderator1").success).toBe(false);
     expect(username.safeParse("modhumita").success).toBe(true);
-    expect(displayName.safeParse("Official Shikor Support").success).toBe(false);
-    expect(displayName.safeParse("Rafi ✔").success).toBe(false);
-    expect(displayName.safeParse("রাফি আহমেদ").success).toBe(true);
+    expect(username.safeParse("peer_link_help").success).toBe(false);
+    expect(username.safeParse("peerless").success).toBe(true);
+    expect(displayName.safeParse("Official PeerLink Support").success).toBe(false);
+    expect(displayName.safeParse("PeerLink Team").success).toBe(false);
+    expect(displayName.safeParse("Peer Link team").success).toBe(false);
+    expect(displayName.safeParse("পিয়ারলিংক টিম").success).toBe(false);
+    expect(displayName.safeParse("পি\u09DFারলিংক টিম").success).toBe(false); // precomposed য় is normalised first
+    expect(displayName.safeParse("Raima ✔").success).toBe(false);
+    expect(displayName.safeParse("রাইমা আহমেদ").success).toBe(true);
   });
   it("requires adult attestation and consent at registration", () => {
-    const base = { email: "A@B.co", username: "rafi", displayName: "Rafi", password: "x".repeat(20), adult: "on", accept: "on" };
+    const base = { email: "A@B.co", username: "raima", displayName: "Raima", password: "x".repeat(20), adult: "on", accept: "on" };
     expect(registerSchema.parse(base).email).toBe("a@b.co");
     expect(registerSchema.safeParse({ ...base, adult: undefined }).success).toBe(false);
     expect(registerSchema.safeParse({ ...base, accept: undefined }).success).toBe(false);
@@ -64,7 +70,7 @@ describe("identity fields", () => {
     expect(httpsUrl.safeParse("http://example.org").success).toBe(false);
     expect(httpsUrl.safeParse("javascript:alert(1)").success).toBe(false);
     expect(httpsUrl.safeParse("https://user:pw@example.org").success).toBe(false);
-    expect(profileSchema.safeParse({ displayName: "Rafi", linkedinUrl: "https://evil.example/in/rafi" }).success).toBe(false);
+    expect(profileSchema.safeParse({ displayName: "Raima", linkedinUrl: "https://evil.example/in/raima" }).success).toBe(false);
   });
   it("accepts 1–3 proposed times from the booking form", () => {
     const r = bookingRequestSchema.safeParse({ offeringId: "00000000-0000-4000-8000-000000000000", subject: "Help with SOP", message: "x".repeat(50), times: ["2026-10-10T10:00", "", ""] });

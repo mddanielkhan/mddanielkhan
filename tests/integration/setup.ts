@@ -1,7 +1,7 @@
 import { afterAll, beforeAll } from "vitest";
 import { sql } from "drizzle-orm";
 
-process.env.DATABASE_URL ??= "postgres://shikor:shikor@localhost:5432/shikor_test";
+process.env.DATABASE_URL ??= "postgres://peerlink:peerlink@localhost:5432/peerlink_test";
 (process.env as Record<string, string>).NODE_ENV = "test";
 process.env.EMAIL_TRANSPORT = "file";
 process.env.EMAIL_FILE_DIR = "test-results/mail-integration";

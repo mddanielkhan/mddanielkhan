@@ -42,7 +42,7 @@ export function isAllowedMeetingUrl(url: string) {
 
 export function defaultMeetingUrl(bookingId: string) {
   // Unguessable but stable room name; no personal data in the URL.
-  return `${env().JITSI_BASE_URL.replace(/\/$/, "")}/Shikor-${hmacHex("jitsi-room", bookingId).slice(0, 24)}`;
+  return `${env().JITSI_BASE_URL.replace(/\/$/, "")}/PeerLink-${hmacHex("jitsi-room", bookingId).slice(0, 24)}`;
 }
 
 function toState(b: typeof bookings.$inferSelect): BookingState {

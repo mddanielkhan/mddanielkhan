@@ -21,7 +21,7 @@ inviting real students.
 ### A2. Quick start (about 5 minutes)
 
 ```bash
-git clone <your repo> shikor && cd shikor
+git clone <your repo> peerlink && cd peerlink
 npm ci              # exact, locked dependencies
 npm run setup       # configuration, database, demo data — one command
 npm run dev         # http://localhost:3000
@@ -48,8 +48,8 @@ npm run dev         # http://localhost:3000
 **Without Docker:** install PostgreSQL 16+, then create the databases and run setup:
 
 ```bash
-createuser --pwprompt shikor          # password: shikor (or change DATABASE_URL in .env)
-createdb -O shikor shikor && createdb -O shikor shikor_test && createdb -O shikor shikor_e2e
+createuser --pwprompt peerlink          # password: peerlink (or change DATABASE_URL in .env)
+createdb -O peerlink peerlink && createdb -O peerlink peerlink_test && createdb -O peerlink peerlink_e2e
 npm run setup -- --no-docker
 ```
 
@@ -59,10 +59,10 @@ Every demo account uses the password `demo passphrase for local dev`.
 
 | Email | Role | Sign-in |
 |---|---|---|
-| `student@shikor.local` | Student (Rafi) | Password only |
-| `mentor@shikor.local` | Verified mentor (Nusrat) | Password + 2FA. Scan the QR code setup printed. |
-| `admin@shikor.local` | Admin / moderator | Password + 2FA. Scan the QR code setup printed. |
-| `helper@shikor.local` | Member (Tanvir) | Password only |
+| `student@peerlink.local` | Student (Raima) | Password only |
+| `mentor@peerlink.local` | Verified mentor (Nusrat) | Password + 2FA. Scan the QR code setup printed. |
+| `admin@peerlink.local` | Admin / moderator | Password + 2FA. Scan the QR code setup printed. |
+| `helper@peerlink.local` | Member (Tanvir) | Password only |
 
 The other seeded people (other mentors, applicants and a scam account) exist to fill the community and moderation
 queues. Their 2FA keys are random and never shown, so use the accounts above to sign in. Lost the QR codes? Run
@@ -83,7 +83,7 @@ queues. Their 2FA keys are random and never shown, so use the accounts above to 
 | `npm run doctor` | Check configuration, secrets, database, migrations, audit chain and email |
 | `npm run dev` | Dev server with hot reload |
 | `npm run check` | Lint + typecheck + unit tests (run before every commit) |
-| `npm run test:integration` | Service tests against real Postgres (`shikor_test`) |
+| `npm run test:integration` | Service tests against real Postgres (`peerlink_test`) |
 | `npm run test:coverage` | All tests + coverage gates on security-critical modules |
 | `npm run build && npm run test:e2e` | Production build + Playwright browser tests (desktop + mobile) |
 | `npm run db:generate -- --name <change>` | Create a migration after editing `src/lib/db/schema.ts` |
@@ -189,7 +189,7 @@ sudo ADMIN_IP=<your.ip.address> bash deploy/firewall-cloudflare.sh
 
 ### B4. Secrets file (never in git)
 
-Create `/etc/shikor/shikor.env` (owned by root, mode `600`):
+Create `/etc/peerlink/peerlink.env` (owned by root, mode `600`):
 
 ```bash
 NODE_ENV=production
@@ -198,7 +198,7 @@ APP_SECRET=<openssl rand -hex 32>
 ENCRYPTION_KEY=<openssl rand -hex 32, different>
 EMAIL_TRANSPORT=smtp
 SMTP_URL=smtps://<user>:<password>@<smtp-host>:465
-EMAIL_FROM="Shikor <no-reply@your-domain.example>"
+EMAIL_FROM="PeerLink <no-reply@your-domain.example>"
 TRUSTED_IP_HEADER=cf-connecting-ip
 HIBP_CHECK=true
 JOBS_INLINE=false
@@ -224,23 +224,23 @@ missing. This is deliberate.
 ### B5. Build the image and create the database roles
 
 ```bash
-git clone <your repo> /opt/shikor && cd /opt/shikor
-docker build -f deploy/Dockerfile -t shikor:$(git rev-parse --short HEAD) -t shikor:latest .
+git clone <your repo> /opt/peerlink && cd /opt/peerlink
+docker build -f deploy/Dockerfile -t peerlink:$(git rev-parse --short HEAD) -t peerlink:latest .
 
 # Start Postgres alone, then create the least-privilege roles once:
-docker compose -f deploy/docker-compose.prod.yml --env-file /etc/shikor/shikor.env up -d postgres
-docker compose -f deploy/docker-compose.prod.yml --env-file /etc/shikor/shikor.env exec -T postgres \
+docker compose -f deploy/docker-compose.prod.yml --env-file /etc/peerlink/peerlink.env up -d postgres
+docker compose -f deploy/docker-compose.prod.yml --env-file /etc/peerlink/peerlink.env exec -T postgres \
   psql -U postgres -v owner_pw="'$OWNER_DB_PASSWORD'" -v app_pw="'$APP_DB_PASSWORD'" -f - < deploy/postgres/grants.sql
 ```
 
-(Export the three passwords into your shell from the env file first, e.g. `set -a; . /etc/shikor/shikor.env; set +a`.)
+(Export the three passwords into your shell from the env file first, e.g. `set -a; . /etc/peerlink/peerlink.env; set +a`.)
 
 ### B6. Start everything
 
 ```bash
-set -a; . /etc/shikor/shikor.env; set +a          # load the passwords into this shell
-COMPOSE="docker compose -f deploy/docker-compose.prod.yml --env-file /etc/shikor/shikor.env"
-$COMPOSE up -d                                     # "migrate" runs first (as shikor_owner), then app + worker + caddy + backup
+set -a; . /etc/peerlink/peerlink.env; set +a          # load the passwords into this shell
+COMPOSE="docker compose -f deploy/docker-compose.prod.yml --env-file /etc/peerlink/peerlink.env"
+$COMPOSE up -d                                     # "migrate" runs first (as peerlink_owner), then app + worker + caddy + backup
 curl -fsS https://your-domain.example/api/health   # → {"status":"ok"}
 ```
 
@@ -248,7 +248,7 @@ Seed the topic list (no demo data in production) and create the first admin. Bot
 (`dist/*.mjs`) and run as the owner role:
 
 ```bash
-OWNER_URL="postgres://shikor_owner:$OWNER_DB_PASSWORD@postgres:5432/shikor"
+OWNER_URL="postgres://peerlink_owner:$OWNER_DB_PASSWORD@postgres:5432/peerlink"
 $COMPOSE run --rm -e DATABASE_URL="$OWNER_URL" app node dist/seed.mjs --topics-only
 $COMPOSE run --rm -e DATABASE_URL="$OWNER_URL" -e ADMIN_EMAIL=you@your-domain.example -e ADMIN_USERNAME=founder app node dist/create-admin.mjs
 $COMPOSE run --rm app node dist/verify-audit-chain.mjs   # → "audit chain intact"
@@ -275,8 +275,8 @@ The `backup` service writes an encrypted `pg_dump` nightly, uploads it off-site,
 and then every month,** run the restore drill against a scratch database:
 
 ```bash
-AGE_KEY_FILE=backup.key SCRATCH_URL=postgres://...@localhost:5432/shikor_restore_test \
-  bash deploy/backup/restore-drill.sh /path/to/shikor-YYYYMMDD.dump.age
+AGE_KEY_FILE=backup.key SCRATCH_URL=postgres://...@localhost:5432/peerlink_restore_test \
+  bash deploy/backup/restore-drill.sh /path/to/peerlink-YYYYMMDD.dump.age
 ```
 
 It restores the backup, prints row counts, **verifies the audit hash chain** and reports how long the recovery took.
@@ -292,14 +292,14 @@ It restores the backup, prints row counts, **verifies the audit hash chain** and
 ### B9. Deploying updates
 
 ```bash
-cd /opt/shikor && git pull
-docker build -f deploy/Dockerfile -t shikor:$(git rev-parse --short HEAD) -t shikor:latest .
-docker compose -f deploy/docker-compose.prod.yml --env-file /etc/shikor/shikor.env up -d   # migrate runs first
+cd /opt/peerlink && git pull
+docker build -f deploy/Dockerfile -t peerlink:$(git rev-parse --short HEAD) -t peerlink:latest .
+docker compose -f deploy/docker-compose.prod.yml --env-file /etc/peerlink/peerlink.env up -d   # migrate runs first
 curl -fsS https://your-domain.example/api/health
-docker compose -f deploy/docker-compose.prod.yml --env-file /etc/shikor/shikor.env run --rm app node dist/doctor.mjs
+docker compose -f deploy/docker-compose.prod.yml --env-file /etc/peerlink/peerlink.env run --rm app node dist/doctor.mjs
 ```
 
-Rollback: `docker tag shikor:<previous-sha> shikor:latest && docker compose ... up -d`. Migrations are forward-only and
+Rollback: `docker tag peerlink:<previous-sha> peerlink:latest && docker compose ... up -d`. Migrations are forward-only and
 backwards-compatible, so the previous image keeps working.
 
 ---
@@ -314,9 +314,9 @@ backwards-compatible, so the previous image keeps working.
 
 **Security**
 - [ ] Cloudflare Full (strict), WAF and bot protection on; origin firewall allows only Cloudflare (B3)
-- [ ] `/etc/shikor/shikor.env` is mode 600; secrets generated fresh; never reused from staging
+- [ ] `/etc/peerlink/peerlink.env` is mode 600; secrets generated fresh; never reused from staging
 - [ ] 2FA on every infrastructure account; SSH keys only
-- [ ] App runs as `shikor_app` (`docker compose exec postgres psql -U postgres -c "\du"`)
+- [ ] App runs as `peerlink_app` (`docker compose exec postgres psql -U postgres -c "\du"`)
 - [ ] `node dist/doctor.mjs` reports **All checks passed** on the production host
 - [ ] `https://your-domain/.well-known/security.txt` correct; `SECURITY.md` email works
 - [ ] Response headers checked (securityheaders.com shows A+); no CSP errors in the browser console

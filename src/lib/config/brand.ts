@@ -1,11 +1,11 @@
 /** Brand constants — the name is a working name; changing it is a one-line edit (plus a trademark search). */
 export const BRAND = {
-  name: "Shikor",
-  nameBn: "শিকড়",
+  name: "PeerLink",
+  nameBn: "পিয়ারলিংক",
   tagline: "Honest guidance from verified people — studies, admissions, scholarships and careers.",
   taglineBn: "যাচাই করা মানুষের কাছ থেকে সৎ পরামর্শ — পড়াশোনা, ভর্তি, স্কলারশিপ ও ক্যারিয়ার।",
-  goldenRule: "Nobody on Shikor will ever ask you for money. Sessions are free.",
-  goldenRuleBn: "শিকড়ে কেউ আপনার কাছে টাকা চাইবে না। সেশন বিনামূল্যে।",
+  goldenRule: "Nobody on PeerLink will ever ask you for money. Sessions are free.",
+  goldenRuleBn: "পিয়ারলিংকে কেউ আপনার কাছে টাকা চাইবে না। সেশন বিনামূল্যে।",
 } as const;
 
 /** Policy document versions. Bump on material change; users re-accept. */

@@ -161,7 +161,7 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
               </ul>
             </div>
 
-            <div className="relative mx-auto w-full max-w-md lg:max-w-none" aria-label="What you'll find on Shikor">
+            <div className="relative mx-auto w-full max-w-md lg:max-w-none" aria-label="What you'll find on PeerLink">
               <div className="space-y-4">
                 {spotlight ? (
                   <div className="card p-5 shadow-lg">
@@ -238,7 +238,7 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
       </section>
 
       {actor ? null : (
-        <Section title="How Shikor works" description="Three steps from question to a conversation with someone who has done it." className="mb-16">
+        <Section title="How PeerLink works" description="Three steps from question to a conversation with someone who has done it." className="mb-16">
           <ol className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {STEPS.map((s, i) => (
               <li key={s.title} className="card p-6">

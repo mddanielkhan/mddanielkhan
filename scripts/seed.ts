@@ -2,10 +2,10 @@
  * Development seed: topics + realistic demo content. Refuses to run in production
  * (production gets topics only, via `npm run db:seed -- --topics-only`).
  *
- * Demo logins (password for all: "demo passphrase for local dev"):
- *   admin@shikor.local   (admin; TOTP secret printed below)
- *   mentor@shikor.local  (verified mentor; TOTP secret printed below)
- *   student@shikor.local (member)
+ * Demo logins (all share DEMO_PASSWORD, see src/lib/cli/demo-accounts.ts):
+ *   admin@peerlink.local   (admin; TOTP secret printed below)
+ *   mentor@peerlink.local  (verified mentor, Nusrat; TOTP secret printed below)
+ *   student@peerlink.local (member, Raima)
  */
 import "@/lib/cli/load-env"; // must stay first: loads .env before any module reads config
 import { eq, sql } from "drizzle-orm";
@@ -16,6 +16,7 @@ import { seedTopics } from "@/lib/content/topics";
 import { hashPassword } from "@/lib/auth/password";
 import { encryptField } from "@/lib/security/crypto";
 import { generateTotpSecret } from "@/lib/auth/totp";
+import { DEMO_EMAIL, DEMO_PASSWORD, DEMO_STUDENT } from "@/lib/cli/demo-accounts";
 
 const topicsOnly = process.argv.includes("--topics-only");
 
@@ -25,12 +26,12 @@ async function main() {
   if (topicsOnly) return;
   if (process.env.NODE_ENV === "production") throw new Error("Refusing to seed demo data in production. Use --topics-only.");
 
-  const [already] = await db().select().from(users).where(eq(users.email, "admin@shikor.local"));
+  const [already] = await db().select().from(users).where(eq(users.email, DEMO_EMAIL.admin));
   if (already) {
     console.log("demo data already present");
     return;
   }
-  const hash = await hashPassword("demo passphrase for local dev");
+  const hash = await hashPassword(DEMO_PASSWORD);
   const tid = async (slug: string) => (await db().select().from(topics).where(eq(topics.slug, slug)))[0]!.id;
   const old = new Date(Date.now() - 120 * 86400_000);
 
@@ -46,12 +47,12 @@ async function main() {
   // E2E runs pin the secrets so tests can compute codes; normal dev seeds get random ones.
   const adminSecret = process.env.SEED_ADMIN_TOTP ?? generateTotpSecret();
   const mentorSecret = process.env.SEED_MENTOR_TOTP ?? generateTotpSecret();
-  const admin = await mk("admin@shikor.local", "founder", "Founder", { role: "admin", trustLevel: 4 });
+  const admin = await mk(DEMO_EMAIL.admin, "founder", "Founder", { role: "admin", trustLevel: 4 });
   await db().update(users).set({ totpSecretEnc: encryptField(adminSecret, `totp:${admin.id}`), totpEnabledAt: new Date() }).where(eq(users.id, admin.id));
-  const mentor = await mk("mentor@shikor.local", "nusrat_tum", "Nusrat Jahan", { trustLevel: 3 }, { headline: "MSc Informatics, TU Munich · ex-BUET CSE", institution: "Technical University of Munich", fieldOfStudy: "Informatics", languages: ["Bangla", "English", "German"], gender: "woman", showGender: true });
+  const mentor = await mk(DEMO_EMAIL.mentor, "nusrat_tum", "Nusrat Jahan", { trustLevel: 3 }, { headline: "MSc Informatics, TU Munich · ex-BUET CSE", institution: "Technical University of Munich", fieldOfStudy: "Informatics", languages: ["Bangla", "English", "German"], gender: "woman", showGender: true });
   await db().update(users).set({ totpSecretEnc: encryptField(mentorSecret, `totp:${mentor.id}`), totpEnabledAt: new Date() }).where(eq(users.id, mentor.id));
-  const student = await mk("student@shikor.local", "rafi_ruet", "Rafi Ahmed", {}, { headline: "EEE, RUET · aiming for an MSc abroad", institution: "RUET" });
-  const helper = await mk("helper@shikor.local", "tanvir_mext", "Tanvir Hasan", { trustLevel: 2 }, { headline: "MEXT scholar, Tohoku University" });
+  const student = await mk(DEMO_EMAIL.student, DEMO_STUDENT.username, DEMO_STUDENT.displayName, {}, { headline: "EEE, RUET · aiming for an MSc abroad", institution: "RUET" });
+  const helper = await mk("helper@peerlink.local", "tanvir_mext", "Tanvir Hasan", { trustLevel: 2 }, { headline: "MEXT scholar, Tohoku University" });
 
   await db().insert(mentorProfiles).values({
     userId: mentor.id,
@@ -91,13 +92,13 @@ async function main() {
   // ── Richer demo community (so the product looks alive in demos) ─────────────
   const days = (n: number) => new Date(Date.now() - n * 86400_000);
   const inDays = (n: number) => new Date(Date.now() + n * 86400_000).toISOString().slice(0, 10);
-  const farhan = await mk("farhan@shikor.local", "farhan_utokyo", "Farhan Kabir", { trustLevel: 3 }, { headline: "PhD candidate, University of Tokyo · MEXT scholar", institution: "University of Tokyo", fieldOfStudy: "Materials Science", languages: ["Bangla", "English", "Japanese"] });
-  const sadia = await mk("sadia@shikor.local", "sadia_dev", "Sadia Islam", { trustLevel: 2 }, { headline: "Software Engineer · ex-BRAC University CSE", institution: "BRAC University", fieldOfStudy: "Computer Science", languages: ["Bangla", "English"], gender: "woman", showGender: true });
-  const arif = await mk("arif@shikor.local", "arif_uoft", "Arif Hossain", { trustLevel: 2 }, { headline: "MEng, University of Toronto · ex-KUET EEE", institution: "University of Toronto", fieldOfStudy: "Electrical Engineering", languages: ["Bangla", "English"] });
-  const nadia = await mk("nadia@shikor.local", "nadia_cu", "Nadia Rahman", { trustLevel: 1, daysVisited: 6 }, { headline: "Chemistry, University of Chittagong", institution: "University of Chittagong" });
-  const tamim = await mk("tamim@shikor.local", "tamim_hsc", "Tamim Chowdhury", { trustLevel: 1, daysVisited: 4 }, { headline: "Preparing for university admission tests" });
-  const applicant = await mk("applicant@shikor.local", "rumana_lund", "Rumana Akter", { trustLevel: 2 }, { headline: "MSc Sustainability, Lund University" });
-  const scammy = await mk("visa.fast@shikor.local", "visa_fast_bd", "Visa Fast BD", { trustLevel: 0, daysVisited: 1, createdAt: days(1) });
+  const farhan = await mk("farhan@peerlink.local", "farhan_utokyo", "Farhan Kabir", { trustLevel: 3 }, { headline: "PhD candidate, University of Tokyo · MEXT scholar", institution: "University of Tokyo", fieldOfStudy: "Materials Science", languages: ["Bangla", "English", "Japanese"] });
+  const sadia = await mk("sadia@peerlink.local", "sadia_dev", "Sadia Islam", { trustLevel: 2 }, { headline: "Software Engineer · ex-BRAC University CSE", institution: "BRAC University", fieldOfStudy: "Computer Science", languages: ["Bangla", "English"], gender: "woman", showGender: true });
+  const arif = await mk("arif@peerlink.local", "arif_uoft", "Arif Hossain", { trustLevel: 2 }, { headline: "MEng, University of Toronto · ex-KUET EEE", institution: "University of Toronto", fieldOfStudy: "Electrical Engineering", languages: ["Bangla", "English"] });
+  const nadia = await mk("nadia@peerlink.local", "nadia_cu", "Nadia Rahman", { trustLevel: 1, daysVisited: 6 }, { headline: "Chemistry, University of Chittagong", institution: "University of Chittagong" });
+  const tamim = await mk("tamim@peerlink.local", "tamim_hsc", "Tamim Chowdhury", { trustLevel: 1, daysVisited: 4 }, { headline: "Preparing for university admission tests" });
+  const applicant = await mk("applicant@peerlink.local", "rumana_lund", "Rumana Akter", { trustLevel: 2 }, { headline: "MSc Sustainability, Lund University" });
+  const scammy = await mk("visa.fast@peerlink.local", "visa_fast_bd", "Visa Fast BD", { trustLevel: 0, daysVisited: 1, createdAt: days(1) });
   await db().insert(posts).values({ authorId: scammy.id, topicId: await tid("student-visa"), type: "discussion", title: "100% visa guarantee for Canada — contact WhatsApp", body: "100% visa guarantee for Canada, no IELTS. Pay advance processing fee to our bKash 01712345678 and WhatsApp us.", status: "held", riskScore: 100, riskSignals: [{ code: "GUARANTEED_OUTCOME", weight: 25 }, { code: "ADVANCE_FEE", weight: 30 }, { code: "SCAM_SIGNATURE_COMBINATION", weight: 60 }] });
 
   for (const [u, headline, topicSlugs, credentials, scope, coi, cap] of [
@@ -147,7 +148,7 @@ async function main() {
   // An open request waiting for the mentor (shown on the mentor's dashboard/session page).
   const soon = (h: number) => new Date(Math.ceil((Date.now() + h * 3600_000) / 1800_000) * 1800_000);
   await db().insert(bookings).values({ offeringId: nusratOffer!.id, mentorId: mentor.id, menteeId: nadia.id, topicId: await tid("higher-study-abroad"), status: "requested", subject: "Is a chemistry background OK for an MSc in Materials in Germany?", message: "I'm finishing my BSc in Chemistry at CU with a 3.45 CGPA. Would programmes like Materials Science at KIT or TU Dresden consider me, and should I take extra physics courses first?", proposedTimes: [soon(30), soon(54)], durationMin: 30, requestExpiresAt: new Date(Date.now() + 70 * 3600_000) });
-  await db().insert(bookings).values({ offeringId: farhanOffer!.id, mentorId: farhan.id, menteeId: student.id, topicId: await tid("scholarships"), status: "accepted", subject: "MEXT research proposal feedback", message: "I've drafted a 2-page research proposal on power electronics. Could you check whether the scope is realistic for MEXT?", proposedTimes: [soon(50)], durationMin: 45, scheduledAt: soon(50), meetingUrl: "https://meet.jit.si/Shikor-demo0000000000000000", acceptedAt: new Date(), requestExpiresAt: new Date(Date.now() + 50 * 3600_000) });
+  await db().insert(bookings).values({ offeringId: farhanOffer!.id, mentorId: farhan.id, menteeId: student.id, topicId: await tid("scholarships"), status: "accepted", subject: "MEXT research proposal feedback", message: "I've drafted a 2-page research proposal on power electronics. Could you check whether the scope is realistic for MEXT?", proposedTimes: [soon(50)], durationMin: 45, scheduledAt: soon(50), meetingUrl: "https://meet.jit.si/PeerLink-demo0000000000000000", acceptedAt: new Date(), requestExpiresAt: new Date(Date.now() + 50 * 3600_000) });
 
   // Community Q&A across topics.
   const q = async (author: typeof student, slug: string, type: "question" | "discussion" | "guide" | "story", title: string, body: string, tags: string[], extra: Partial<typeof posts.$inferInsert> = {}) =>
@@ -193,9 +194,9 @@ async function main() {
   ]);
 
   console.log("demo data seeded");
-  console.log(`  admin@shikor.local  TOTP secret: ${adminSecret}`);
-  console.log(`  mentor@shikor.local TOTP secret: ${mentorSecret}`);
-  console.log('  password for all demo accounts: "demo passphrase for local dev"');
+  console.log(`  ${DEMO_EMAIL.admin}  TOTP secret: ${adminSecret}`);
+  console.log(`  ${DEMO_EMAIL.mentor} TOTP secret: ${mentorSecret}`);
+  console.log(`  password for all demo accounts: "${DEMO_PASSWORD}"`);
 }
 
 main()

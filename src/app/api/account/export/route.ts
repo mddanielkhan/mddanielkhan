@@ -13,7 +13,7 @@ export const POST = defineRoute({
     return {
       body: JSON.stringify(data, null, 2),
       contentType: "application/json; charset=utf-8",
-      headers: { "content-disposition": `attachment; filename="shikor-data-${new Date().toISOString().slice(0, 10)}.json"`, "cache-control": "no-store" },
+      headers: { "content-disposition": `attachment; filename="peerlink-data-${new Date().toISOString().slice(0, 10)}.json"`, "cache-control": "no-store" },
     };
   },
 });

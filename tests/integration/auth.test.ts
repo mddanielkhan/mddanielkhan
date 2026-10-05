@@ -40,7 +40,7 @@ describe("registration → verification → login", () => {
     await register({ email: "rahima@example.com", username: "rahima2", displayName: "Someone", password: PASSWORD }, { ipHash: null });
     const count = await db().select({ n: sql<number>`count(*)::int` }).from(users).where(eq(users.email, "rahima@example.com"));
     expect(count[0]!.n).toBe(1);
-    expect((await lastMailTo("rahima@example.com"))?.subject).toMatch(/Shikor: Someone tried/);
+    expect((await lastMailTo("rahima@example.com"))?.subject).toMatch(/PeerLink: Someone tried/);
 
     await verifyEmail(token);
     await expect(verifyEmail(token)).rejects.toBeInstanceOf(AppError); // single use

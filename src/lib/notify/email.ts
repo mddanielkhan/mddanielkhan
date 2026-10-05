@@ -11,7 +11,7 @@ import type { DbOrTx } from "@/lib/db/client";
  *
  * ANTI-PHISHING RULE: emails never contain user-generated text and only ever
  * link to our own APP_URL. A scammer cannot use our notifications to deliver
- * their message or link — and users learn that a real Shikor email never asks
+ * their message or link — and users learn that a real PeerLink email never asks
  * for money, passwords or codes.
  */
 

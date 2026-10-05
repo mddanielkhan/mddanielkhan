@@ -21,18 +21,18 @@ jobs:
       postgres:
         image: postgres:17
         env:
-          POSTGRES_USER: shikor
-          POSTGRES_PASSWORD: shikor
-          POSTGRES_DB: shikor_test
+          POSTGRES_USER: peerlink
+          POSTGRES_PASSWORD: peerlink
+          POSTGRES_DB: peerlink_test
         ports: ["5432:5432"]
         options: >-
-          --health-cmd "pg_isready -U shikor"
+          --health-cmd "pg_isready -U peerlink"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
     env:
-      DATABASE_URL: postgres://shikor:shikor@localhost:5432/shikor_test
-      DATABASE_URL_E2E: postgres://shikor:shikor@localhost:5432/shikor_e2e
+      DATABASE_URL: postgres://peerlink:peerlink@localhost:5432/peerlink_test
+      DATABASE_URL_E2E: postgres://peerlink:peerlink@localhost:5432/peerlink_e2e
       NEXT_TELEMETRY_DISABLED: "1"
     steps:
       - uses: actions/checkout@v4
@@ -47,7 +47,7 @@ jobs:
       - run: npm run typecheck
       - name: Migrations apply cleanly to an empty database
         run: |
-          PGPASSWORD=shikor psql -h localhost -U shikor -d shikor_test -c "create database shikor_e2e"
+          PGPASSWORD=peerlink psql -h localhost -U peerlink -d peerlink_test -c "create database peerlink_e2e"
           npx tsx scripts/migrate.ts
       - name: Unit + integration tests with coverage gates
         run: npm run test:coverage

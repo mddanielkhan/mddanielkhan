@@ -2,11 +2,11 @@ import { defineConfig, devices } from "@playwright/test";
 
 /**
  * End-to-end tests against the real production build (standalone server) and a
- * real PostgreSQL database (DATABASE_URL_E2E, default shikor_e2e). The global
+ * real PostgreSQL database (DATABASE_URL_E2E, default peerlink_e2e). The global
  * setup resets the database, migrates and seeds deterministic fixtures.
  */
 const PORT = 3100;
-export const E2E_DB = process.env.DATABASE_URL_E2E ?? "postgres://shikor:shikor@localhost:5432/shikor_e2e";
+export const E2E_DB = process.env.DATABASE_URL_E2E ?? "postgres://peerlink:peerlink@localhost:5432/peerlink_e2e";
 export const MAIL_DIR = "test-results/mail-e2e";
 
 export default defineConfig({

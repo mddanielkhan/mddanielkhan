@@ -4,7 +4,7 @@ import { rmSync } from "node:fs";
 import pg from "pg";
 import { ADMIN_TOTP, MENTOR_TOTP } from "./fixtures";
 
-const url = process.env.DATABASE_URL ?? "postgres://shikor:shikor@localhost:5432/shikor_e2e";
+const url = process.env.DATABASE_URL ?? "postgres://peerlink:peerlink@localhost:5432/peerlink_e2e";
 if (!/e2e|test/.test(url)) throw new Error(`Refusing to reset a non-test database: ${url}`);
 
 async function main() {

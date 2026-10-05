@@ -1,3 +1,3 @@
 -- Extra databases for local tests.
-CREATE DATABASE shikor_test OWNER shikor;
-CREATE DATABASE shikor_e2e OWNER shikor;
+CREATE DATABASE peerlink_test OWNER peerlink;
+CREATE DATABASE peerlink_e2e OWNER peerlink;

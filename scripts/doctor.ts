@@ -22,7 +22,7 @@ const report = (status: Status, label: string, detail?: string) => {
 
 async function main() {
   console.log("");
-  banner("Shikor doctor", "Configuration, database and security checks");
+  banner("PeerLink doctor", "Configuration, database and security checks");
 
   heading("Runtime");
   const [major, minor] = process.versions.node.split(".").map(Number) as [number, number];
@@ -87,7 +87,7 @@ async function main() {
     );
     const p = priv.rows[0]!;
     const leastPrivilege = !p.can_update && !p.is_owner;
-    report(leastPrivilege ? "ok" : prod ? "fail" : "info", leastPrivilege ? "Least-privilege database role" : "App connects as a privileged role", leastPrivilege ? "cannot rewrite the audit log" : "fine locally; production must use shikor_app (deploy/postgres/grants.sql)");
+    report(leastPrivilege ? "ok" : prod ? "fail" : "info", leastPrivilege ? "Least-privilege database role" : "App connects as a privileged role", leastPrivilege ? "cannot rewrite the audit log" : "fine locally; production must use peerlink_app (deploy/postgres/grants.sql)");
 
     const enc = await db().execute<{ id: string; enc: string }>(sql`select id, totp_secret_enc as enc from users where totp_secret_enc is not null limit 1`);
     if (enc.rows[0]) {

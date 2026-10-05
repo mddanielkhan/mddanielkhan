@@ -41,7 +41,7 @@ test("a new student registers, verifies their email and asks a question", async 
 });
 
 test("a scam post is held for review and invisible to others", async ({ page, browser }) => {
-  await login(page, "student@shikor.local");
+  await login(page, "student@peerlink.local");
   await page.goto("/posts/new");
   await page.getByLabel("Title").fill("Guaranteed UK admission and visa, limited seats");
   await page.getByLabel("Details").fill("100% guaranteed admission and visa for UK. Only 3 seats left! Pay 50000 tk advance payment to our bKash 01812345678 and WhatsApp us today.");
@@ -57,7 +57,7 @@ test("a scam post is held for review and invisible to others", async ({ page, br
 });
 
 test("a student requests a session and a 2FA-protected mentor accepts it", async ({ page, browser }) => {
-  await login(page, "student@shikor.local");
+  await login(page, "student@peerlink.local");
   await page.goto("/u/nusrat_tum");
   await page.getByRole("link", { name: "Request this session" }).first().click();
   await page.getByLabel("What do you want help with?").fill("Shortlisting German MSc programmes");
@@ -70,11 +70,11 @@ test("a student requests a session and a 2FA-protected mentor accepts it", async
 
   const ctx = await browser.newContext();
   const mentor = await ctx.newPage();
-  await login(mentor, "mentor@shikor.local", undefined, MENTOR_TOTP);
+  await login(mentor, "mentor@peerlink.local", undefined, MENTOR_TOTP);
   await mentor.goto(bookingUrl);
   await mentor.getByRole("button", { name: "Accept" }).click();
   await expect(mentor.getByText(/Session confirmed/)).toBeVisible();
-  await expect(mentor.getByRole("link", { name: "Join the video call" })).toHaveAttribute("href", /^https:\/\/meet\.jit\.si\/Shikor-/);
+  await expect(mentor.getByRole("link", { name: "Join the video call" })).toHaveAttribute("href", /^https:\/\/meet\.jit\.si\/PeerLink-/);
   await ctx.close();
 
   await page.goto(bookingUrl);
@@ -82,7 +82,7 @@ test("a student requests a session and a 2FA-protected mentor accepts it", async
 });
 
 test("staff need 2FA, then can review the held scam post", async ({ page }) => {
-  await login(page, "admin@shikor.local", undefined, ADMIN_TOTP);
+  await login(page, "admin@peerlink.local", undefined, ADMIN_TOTP);
   await page.goto("/mod/queue");
   await expect(page.getByRole("heading", { name: "Review queue" })).toBeVisible();
   const card = page.locator(".card", { hasText: "100% visa guarantee for Canada" }).first();
@@ -110,9 +110,9 @@ test("signed-in pages hydrate cleanly for students, mentors and staff", async ({
   // ~30 pages, each waiting for network idle, plus up to one 30 s wait for a fresh TOTP step per 2FA account.
   test.setTimeout(180_000);
   const roles: Array<[string, string | undefined, string[]]> = [
-    ["student@shikor.local", undefined, ["/feed", "/notifications", "/bookings", "/posts/new", "/u/nusrat_tum", "/settings", "/settings/security", "/settings/privacy", "/mentors/apply"]],
-    ["mentor@shikor.local", MENTOR_TOTP, ["/mentor", "/bookings", "/notifications", "/settings/security"]],
-    ["admin@shikor.local", ADMIN_TOTP, ["/mod", "/mod/queue", "/mod/reports", "/mod/mentors", "/mod/users", "/mod/appeals", "/mod/disputes", "/mod/audit", "/mod/settings"]],
+    ["student@peerlink.local", undefined, ["/feed", "/notifications", "/bookings", "/posts/new", "/u/nusrat_tum", "/settings", "/settings/security", "/settings/privacy", "/mentors/apply"]],
+    ["mentor@peerlink.local", MENTOR_TOTP, ["/mentor", "/bookings", "/notifications", "/settings/security"]],
+    ["admin@peerlink.local", ADMIN_TOTP, ["/mod", "/mod/queue", "/mod/reports", "/mod/mentors", "/mod/users", "/mod/appeals", "/mod/disputes", "/mod/audit", "/mod/settings"]],
   ];
   for (const [email, secret, paths] of roles) {
     const ctx = await browser.newContext();

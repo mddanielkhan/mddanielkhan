@@ -18,7 +18,7 @@ export default async function TwoFactorPage({ searchParams }: { searchParams: Se
   return (
     <AuthCard
       title="Enter your verification code"
-      subtitle="Open your authenticator app and enter the 6-digit code for Shikor."
+      subtitle="Open your authenticator app and enter the 6-digit code for PeerLink."
       icon={
         <span className="icon-tile h-12 w-12 rounded-2xl">
           <Icon icon={KeyRound} className="h-6 w-6" />

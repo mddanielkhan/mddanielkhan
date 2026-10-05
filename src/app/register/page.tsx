@@ -40,8 +40,8 @@ export default async function RegisterPage({ searchParams }: { searchParams: Sea
         <Form action="/api/auth/register" back="/register">
           <TextField label="Email" name="email" type="email" autoComplete="email" required maxLength={254} placeholder="you@example.com" />
           <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
-            <TextField label="Username" name="username" required minLength={3} maxLength={24} pattern="[a-z0-9_]{3,24}" autoComplete="username" placeholder="rafi_ruet" hint="Lowercase letters, numbers and _. Shown publicly." />
-            <TextField label="Display name" name="displayName" required minLength={2} maxLength={60} placeholder="Rafi" hint="A nickname is fine — your legal name is never required." />
+            <TextField label="Username" name="username" required minLength={3} maxLength={24} pattern="[a-z0-9_]{3,24}" autoComplete="username" placeholder="raima_ruet" hint="Lowercase letters, numbers and _. Shown publicly." />
+            <TextField label="Display name" name="displayName" required minLength={2} maxLength={60} placeholder="Raima" hint="A nickname is fine — your legal name is never required." />
           </div>
           <TextField
             label="Password"

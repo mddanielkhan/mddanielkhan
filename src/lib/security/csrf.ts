@@ -11,10 +11,10 @@ import { env, secureCookiesEnabled } from "@/lib/env";
  */
 
 export const CSRF_FIELD = "_csrf";
-export const CSRF_SEED_HEADER = "x-shikor-csrf-seed";
+export const CSRF_SEED_HEADER = "x-peerlink-csrf-seed";
 
 export function csrfCookieName() {
-  return secureCookiesEnabled() ? "__Host-shikor_csrf" : "shikor_csrf";
+  return secureCookiesEnabled() ? "__Host-peerlink_csrf" : "peerlink_csrf";
 }
 
 export function csrfTokenForSeed(seed: string): string {

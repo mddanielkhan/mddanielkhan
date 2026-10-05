@@ -1,10 +1,10 @@
-# Shikor (শিকড়)
+# PeerLink
 
 **A verification-first community and mentorship platform for students in Bangladesh.** Students ask about studies,
 admissions, scholarships, higher study abroad and careers. Verified mentors give free sessions. Opportunities are
 checked against official sources. Trust is earned, inspectable and never for sale.
 
-> 🔒 **Golden rule:** nobody on Shikor may ask anyone for money. Sessions are free.
+> 🔒 **Golden rule:** nobody on PeerLink may ask anyone for money. Sessions are free.
 
 This repository is the complete, working **Phase 1**. It is the improved and verified successor to the earlier
 "Pathshala" and "Shikor" blueprints; see [what was wrong with them and what changed](docs/BLUEPRINT.md#2-what-was-wrong-with-the-earlier-blueprints--verified-errata).

@@ -24,7 +24,7 @@ export const SESSION_POLICY = {
 } as const;
 
 export function sessionCookieName() {
-  return secureCookiesEnabled() ? "__Host-shikor_sid" : "shikor_sid";
+  return secureCookiesEnabled() ? "__Host-peerlink_sid" : "peerlink_sid";
 }
 
 export function sessionCookieOptions(maxAgeSec: number) {

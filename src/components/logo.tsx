@@ -1,16 +1,16 @@
 import Link from "next/link";
 import { BRAND } from "@/lib/config/brand";
 
-/** Brand mark: a sprout above the ground line with its roots below — শিকড় means "roots". */
+/** Brand mark: two equal rings, interlocked — two peers, linked. Mirrors public/icon.svg. */
 export function LogoMark({ className = "h-8 w-8" }: { className?: string }) {
   return (
     <svg viewBox="0 0 32 32" className={className} aria-hidden="true" focusable="false">
       <rect width="32" height="32" rx="9" fill="#157a46" />
-      <path d="M16 21.5V12.5" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
-      <path d="M16.2 14.2c.1-3.6 2.7-6.3 6.3-6.4-.1 3.6-2.7 6.3-6.3 6.4Z" fill="#fff" />
-      <path d="M15.8 16.6c-.1-2.9-2.3-5.1-5.2-5.2.1 2.9 2.3 5.1 5.2 5.2Z" fill="#bfe9d1" />
-      <path d="M8.5 21.5h15" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
-      <path d="M16 21.5v4M16 23.4l-3.2 2.3M16 23.4l3.2 2.3" stroke="#9fe3bf" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="12.4" cy="16" r="5.6" fill="none" stroke="#fff" strokeWidth="2.5" />
+      <circle cx="19.6" cy="16" r="5.6" fill="none" stroke="#9fe3bf" strokeWidth="2.5" />
+      {/* The white ring passes over the mint one at the top crossing: cut the mint ring, then redraw white past the cut. */}
+      <path d="M13.56 10.52A5.6 5.6 0 0 1 17.59 13.9" fill="none" stroke="#157a46" strokeWidth="4.7" />
+      <path d="M12.79 10.41A5.6 5.6 0 0 1 17.83 14.65" fill="none" stroke="#fff" strokeWidth="2.5" />
     </svg>
   );
 }

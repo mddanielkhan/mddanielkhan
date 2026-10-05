@@ -4,7 +4,7 @@ import { LogoMark } from "./logo";
 import { BadgeCheck, Icon, KeyRound, Lock, ShieldCheck } from "./icons";
 
 const POINTS = [
-  { icon: Lock, title: "Free, always", body: "Nobody on Shikor may ask you for money. Sessions with mentors cost nothing." },
+  { icon: Lock, title: "Free, always", body: "Nobody on PeerLink may ask you for money. Sessions with mentors cost nothing." },
   { icon: BadgeCheck, title: "Real people, checked", body: "Mentors are approved by a moderator after a credential review." },
   { icon: KeyRound, title: "Your account, protected", body: "Argon2id passwords, optional 2FA, and you can sign out any device." },
 ];

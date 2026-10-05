@@ -1,8 +1,8 @@
 {
-  "name": "shikor",
+  "name": "peerlink",
   "version": "1.0.0",
   "private": true,
-  "description": "Shikor — a verification-first student community and mentorship platform (Bangladesh-first, web/PWA).",
+  "description": "PeerLink — a verification-first student community and mentorship platform (Bangladesh-first, web/PWA).",
   "type": "module",
   "engines": {
     "node": ">=22.12 <23 || >=24"

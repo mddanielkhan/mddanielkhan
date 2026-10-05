@@ -11,7 +11,7 @@
  *
  * Improvement over both earlier blueprints: completion is never decided by one
  * side alone. Mentor-only confirmation (Pathshala) lets a mentor farm fake
- * sessions; dual check-in/out (Shikor) needs live telemetry we do not have
+ * sessions; dual check-in/out (the Shikor blueprint) needs live telemetry we do not have
  * without our own video stack. Here: both confirm, or one confirms and the
  * other has 72 h to dispute — and every dispute goes to a human.
  */

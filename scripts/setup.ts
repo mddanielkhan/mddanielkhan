@@ -25,6 +25,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import pg from "pg";
 import QRCode from "qrcode";
+import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/cli/demo-accounts";
 import { banner, c, fatal, heading, line, table } from "@/lib/cli/terminal";
 import { generateTotpSecret, otpauthUri } from "@/lib/auth/totp";
 import { decryptField } from "@/lib/security/crypto";
@@ -33,7 +34,6 @@ const ROOT = process.cwd();
 const ENV_FILE = resolve(ROOT, ".env");
 const EXAMPLE_FILE = resolve(ROOT, ".env.example");
 const args = new Set(process.argv.slice(2));
-const DEMO_PASSWORD = "demo passphrase for local dev";
 const HEX64 = /^[0-9a-f]{64}$/i;
 
 if (args.has("--help") || args.has("-h")) {
@@ -178,13 +178,15 @@ function isLocalDb(url: string) {
   return host === "localhost" || host === "127.0.0.1" || host === "::1" || host === "[::1]";
 }
 
-async function prepareDatabase(): Promise<{ seeded: boolean; secrets?: { admin: string; mentor: string } }> {
+type DbResult = { seeded: boolean; demoAccounts: boolean; secrets?: { admin: string; mentor: string } };
+
+async function prepareDatabase(): Promise<DbResult> {
   heading("4. Database");
-  const url = process.env.DATABASE_URL ?? "postgres://shikor:shikor@localhost:5432/shikor";
+  const url = process.env.DATABASE_URL ?? "postgres://peerlink:peerlink@localhost:5432/peerlink";
   const client = await connect(url);
   const { rows } = await client.query<{ v: string }>("select current_setting('server_version') as v");
   const major = Number(rows[0]!.v.split(".")[0]);
-  if (major < 16) fatal(`PostgreSQL ${rows[0]!.v} is too old.`, "Shikor needs PostgreSQL 16 or newer.");
+  if (major < 16) fatal(`PostgreSQL ${rows[0]!.v} is too old.`, "PeerLink needs PostgreSQL 16 or newer.");
   line("ok", `Connected to PostgreSQL ${rows[0]!.v}`, new URL(url).host);
 
   if (args.has("--reset")) {
@@ -202,12 +204,14 @@ async function prepareDatabase(): Promise<{ seeded: boolean; secrets?: { admin: 
     const { rows: users } = await pool.query<{ n: number }>("select count(*)::int as n from users");
     if (args.has("--no-seed")) {
       line("skip", "Demo data skipped", "--no-seed");
-      return { seeded: false };
+      return { seeded: false, demoAccounts: false };
     }
     if (users[0]!.n > 0) {
       await assertKeyMatchesData(pool);
-      line("skip", "Demo data already present", "run with --reset to start fresh");
-      return { seeded: false };
+      const { rows: demo } = await pool.query("select 1 from users where email = $1", [DEMO_EMAIL.admin]);
+      if (demo[0]) line("skip", "Demo data already present", "run with --reset to start fresh");
+      else line("warn", "Database has data but no demo accounts", "run with --reset to replace it with demo data");
+      return { seeded: false, demoAccounts: Boolean(demo[0]) };
     }
   } finally {
     await pool.end();
@@ -220,12 +224,12 @@ async function prepareDatabase(): Promise<{ seeded: boolean; secrets?: { admin: 
   });
   if (r.status !== 0) fatal("Seeding demo data failed.", (r.stderr || r.stdout || "").trim().split("\n").slice(-6).join("\n"));
   line("ok", "Demo community created", "mentors, posts, opportunities, sessions, reports");
-  return { seeded: true, secrets };
+  return { seeded: true, demoAccounts: true, secrets };
 }
 
-async function summary(docker: boolean, result: { seeded: boolean; secrets?: { admin: string; mentor: string } }) {
+async function summary(docker: boolean, result: DbResult) {
   console.log("");
-  banner("Shikor is ready", "Start the app with:  npm run dev");
+  banner("PeerLink is ready", "Start the app with:  npm run dev");
   heading("Open");
   table([
     ["What", "Where"],
@@ -234,13 +238,13 @@ async function summary(docker: boolean, result: { seeded: boolean; secrets?: { a
       ? [["Email inbox (Mailpit)", "http://localhost:8025"]]
       : [["Emails", process.env.EMAIL_TRANSPORT === "file" ? `written to ${process.env.EMAIL_FILE_DIR ?? ".mail-outbox"}/` : process.env.EMAIL_TRANSPORT === "smtp" ? "sent through SMTP_URL" : "printed in the `npm run dev` terminal"]]),
   ]);
-  if (result.seeded || !args.has("--no-seed")) {
+  if (result.demoAccounts) {
     heading("Demo accounts");
     table([
       ["Role", "Email", "2FA"],
-      ["Student", "student@shikor.local", "—"],
-      ["Mentor", "mentor@shikor.local", "required"],
-      ["Moderator", "admin@shikor.local", "required"],
+      ["Student", DEMO_EMAIL.student, "—"],
+      ["Mentor", DEMO_EMAIL.mentor, "required"],
+      ["Moderator", DEMO_EMAIL.admin, "required"],
     ]);
     console.log(`    Password for every demo account: ${c.bold(DEMO_PASSWORD)}`);
   }
@@ -248,18 +252,18 @@ async function summary(docker: boolean, result: { seeded: boolean; secrets?: { a
     heading("Two-factor setup for the demo mentor and moderator");
     console.log(c.dim("    Scan the code, or type the key, into any authenticator app (Google Authenticator, Microsoft Authenticator, Aegis)."));
     for (const [label, account, secret] of [
-      ["Mentor", "mentor@shikor.local", result.secrets.mentor],
-      ["Moderator", "admin@shikor.local", result.secrets.admin],
+      ["Mentor", DEMO_EMAIL.mentor, result.secrets.mentor],
+      ["Moderator", DEMO_EMAIL.admin, result.secrets.admin],
     ] as const) {
       console.log(`\n    ${c.bold(label)} — ${account}`);
       // QR codes need an interactive colour terminal; logs and NO_COLOR get the key only.
       if (process.stdout.isTTY && !process.env.NO_COLOR) {
-        const qr = await QRCode.toString(otpauthUri(secret, account, "Shikor (local)"), { type: "terminal", small: true });
+        const qr = await QRCode.toString(otpauthUri(secret, account, "PeerLink (local)"), { type: "terminal", small: true });
         console.log(qr.replace(/^/gm, "    "));
       }
       console.log(`    Key: ${c.cyan(secret.match(/.{1,4}/g)!.join(" "))}`);
     }
-  } else if (!args.has("--no-seed")) {
+  } else if (result.demoAccounts) {
     console.log(c.dim("\n    2FA keys were shown when the demo data was first created. Run `npm run setup -- --reset` to make new ones."));
   }
   heading("Next");
@@ -275,7 +279,7 @@ async function summary(docker: boolean, result: { seeded: boolean; secrets?: { a
 
 async function main() {
   console.log("");
-  banner("Shikor setup", "Local development environment");
+  banner("PeerLink setup", "Local development environment");
   checkPrerequisites();
   const docker = hasDocker();
   const envCreated = ensureEnvFile();

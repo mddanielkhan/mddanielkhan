@@ -91,7 +91,7 @@ describe("mentoring sessions", () => {
     await expect(acceptBooking(student, { id, slot: b0!.proposedTimes[0]!.toISOString() })).rejects.toMatchObject({ code: "only_mentor_can_accept" });
     await acceptBooking(mentor, { id, slot: b0!.proposedTimes[0]!.toISOString() });
     const view = await getBookingForViewer(id, student);
-    expect(view?.booking.meetingUrl).toMatch(/^https:\/\/meet\.jit\.si\/Shikor-[0-9a-f]{24}$/);
+    expect(view?.booking.meetingUrl).toMatch(/^https:\/\/meet\.jit\.si\/PeerLink-[0-9a-f]{24}$/);
     expect(await getBookingForViewer(id, await makeUser())).toBeNull(); // IDOR: strangers can't see it
 
     // Fast-forward: the session happened.

@@ -15,7 +15,7 @@ const HOW: Array<[IconNode, string, string]> = [
 export default function AboutPage() {
   return (
     <div className="mx-auto max-w-4xl">
-      <PageHeader eyebrow="About" title={`${BRAND.name} (${BRAND.nameBn})`} subtitle="শিকড় means “roots”: a place where students put down roots and grow." />
+      <PageHeader eyebrow="About" title={BRAND.name} subtitle="A link to peers who have already walked the path — verified people, never paid agents." />
 
       <section className="mb-12">
         <h2 className="text-xl font-bold tracking-tight">Why we exist</h2>

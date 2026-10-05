@@ -61,7 +61,7 @@ export type RouteDefinition<S extends z.ZodType> = {
   handler: (ctx: RouteContext<z.infer<S>>) => Promise<RouteResult>;
 };
 
-export const ROUTE_MARK = Symbol.for("shikor.defineRoute");
+export const ROUTE_MARK = Symbol.for("peerlink.defineRoute");
 
 export function defineRoute<S extends z.ZodType>(def: RouteDefinition<S>) {
   const method = def.method ?? "POST";

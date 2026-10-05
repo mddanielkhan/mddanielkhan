@@ -17,13 +17,13 @@ const strong = { APP_SECRET: "a1".repeat(32), ENCRYPTION_KEY: "b2".repeat(32) };
 
 describe("environment fail-fast", () => {
   it("refuses placeholder secrets in production", () => {
-    expect(load({ NODE_ENV: "production", APP_URL: "https://shikor.example" })).toThrow(/APP_SECRET: is a placeholder/);
+    expect(load({ NODE_ENV: "production", APP_URL: "https://peerlink.example" })).toThrow(/APP_SECRET: is a placeholder/);
   });
   it("refuses reused secrets", () => {
-    expect(load({ NODE_ENV: "production", APP_URL: "https://shikor.example", APP_SECRET: "c3".repeat(32), ENCRYPTION_KEY: "c3".repeat(32) })).toThrow(/must differ/);
+    expect(load({ NODE_ENV: "production", APP_URL: "https://peerlink.example", APP_SECRET: "c3".repeat(32), ENCRYPTION_KEY: "c3".repeat(32) })).toThrow(/must differ/);
   });
   it("requires https, smtp, a worker, a real grievance contact and a trusted IP header for real deployments", () => {
-    const run = load({ NODE_ENV: "production", APP_URL: "http://shikor.example", ...strong, EMAIL_TRANSPORT: "console", JOBS_INLINE: "true" });
+    const run = load({ NODE_ENV: "production", APP_URL: "http://peerlink.example", ...strong, EMAIL_TRANSPORT: "console", JOBS_INLINE: "true" });
     expect(run).toThrow(/APP_URL: must be https/);
     expect(run).toThrow(/EMAIL_TRANSPORT: must be smtp/);
     expect(run).toThrow(/JOBS_INLINE/);
@@ -33,14 +33,14 @@ describe("environment fail-fast", () => {
   it("accepts a correct production configuration", () => {
     const run = load({
       NODE_ENV: "production",
-      APP_URL: "https://shikor.example",
+      APP_URL: "https://peerlink.example",
       ...strong,
       EMAIL_TRANSPORT: "smtp",
       SMTP_URL: "smtps://u:p@smtp.example:465",
-      GRIEVANCE_OFFICER_EMAIL: "grievance@shikor.example",
+      GRIEVANCE_OFFICER_EMAIL: "grievance@peerlink.example",
       TRUSTED_IP_HEADER: "cf-connecting-ip",
     });
-    expect(run().APP_URL).toBe("https://shikor.example");
+    expect(run().APP_URL).toBe("https://peerlink.example");
   });
   it("allows a localhost production run (smoke/E2E) but still requires real secrets", () => {
     expect(load({ NODE_ENV: "production", APP_URL: "http://localhost:3000", ...strong })().EMAIL_TRANSPORT).toBe("console");

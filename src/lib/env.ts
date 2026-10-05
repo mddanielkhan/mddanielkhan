@@ -28,14 +28,14 @@ const schema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     APP_URL: z.url().default("http://localhost:3000"),
-    DATABASE_URL: z.string().min(1).default("postgres://shikor:shikor@localhost:5432/shikor"),
+    DATABASE_URL: z.string().min(1).default("postgres://peerlink:peerlink@localhost:5432/peerlink"),
     DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(100).default(10),
 
     APP_SECRET: hex32.default("1".repeat(64)),
     ENCRYPTION_KEY: hex32.default("2".repeat(64)),
 
     EMAIL_TRANSPORT: z.enum(["console", "smtp", "file"]).default("console"),
-    EMAIL_FROM: z.string().default("Shikor <no-reply@localhost>"),
+    EMAIL_FROM: z.string().default("PeerLink <no-reply@localhost>"),
     SMTP_URL: z.string().optional(),
     EMAIL_FILE_DIR: z.string().default(".mail-outbox"),
 
@@ -95,7 +95,7 @@ export function env(): Env {
   if (cached.NODE_ENV === "development" && (!process.env.APP_SECRET || !process.env.ENCRYPTION_KEY)) {
     // Development convenience only (production refuses to boot without real secrets). Say so loudly:
     // two processes on different fallbacks cannot read each other's encrypted data (e.g. 2FA secrets).
-    console.warn("[shikor] APP_SECRET/ENCRYPTION_KEY are not set — using built-in development keys. Run `npm run setup` to create a .env with your own.");
+    console.warn("[peerlink] APP_SECRET/ENCRYPTION_KEY are not set — using built-in development keys. Run `npm run setup` to create a .env with your own.");
   }
   return cached;
 }

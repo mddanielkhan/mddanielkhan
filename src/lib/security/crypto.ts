@@ -19,7 +19,7 @@ export function subkey(purpose: KeyPurpose): Buffer {
   const cacheKey = `${purpose}:${secret.slice(0, 8)}`;
   let key = subkeyCache.get(cacheKey);
   if (!key) {
-    key = Buffer.from(hkdfSync("sha256", Buffer.from(secret, "hex"), Buffer.alloc(0), `shikor:${purpose}:v1`, 32));
+    key = Buffer.from(hkdfSync("sha256", Buffer.from(secret, "hex"), Buffer.alloc(0), `peerlink:${purpose}:v1`, 32));
     subkeyCache.set(cacheKey, key);
   }
   return key;

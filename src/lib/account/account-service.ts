@@ -162,7 +162,7 @@ export async function exportUserData(userId: string) {
   await audit({ action: "privacy.data_exported", actorId: userId });
   return {
     exportedAt: new Date().toISOString(),
-    format: "shikor-export-v1",
+    format: "peerlink-export-v1",
     note: "This file contains the personal data we hold about you. Feedback you received is anonymised to protect reviewers.",
     account: strip(u as unknown as Record<string, unknown>, ["passwordHash", "totpSecretEnc", "totpLastStep"]),
     profile,
@@ -246,7 +246,7 @@ export async function deleteAccount(actor: ResolvedSession, password: string, de
 
 // ─── Locale ─────────────────────────────────────────────────────────────────
 
-export const LOCALE_COOKIE = "shikor_locale";
+export const LOCALE_COOKIE = "peerlink_locale";
 
 export async function setUserLocale(userId: string, locale: "en" | "bn") {
   await db().update(users).set({ locale }).where(eq(users.id, userId));

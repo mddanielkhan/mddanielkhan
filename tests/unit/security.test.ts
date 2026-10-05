@@ -104,7 +104,7 @@ describe("TOTP (RFC 6238)", () => {
     expect(verifyTotp(secret, "12345", null, t)).toBeNull();
   });
   it("builds an otpauth URI and recovery codes", () => {
-    expect(otpauthUri("ABC", "rahim", "Shikor")).toMatch(/^otpauth:\/\/totp\/Shikor%3Arahim\?secret=ABC&issuer=Shikor/);
+    expect(otpauthUri("ABC", "rahim", "PeerLink")).toMatch(/^otpauth:\/\/totp\/PeerLink%3Arahim\?secret=ABC&issuer=PeerLink/);
     const codes = generateRecoveryCodes();
     expect(codes).toHaveLength(10);
     expect(new Set(codes).size).toBe(10);

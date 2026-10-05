@@ -8,7 +8,7 @@ export type Db = NodePgDatabase<typeof schema>;
 export type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 export type DbOrTx = Db | Tx;
 
-const globalForDb = globalThis as unknown as { __shikorPool?: pg.Pool; __shikorDb?: Db };
+const globalForDb = globalThis as unknown as { __peerlinkPool?: pg.Pool; __peerlinkDb?: Db };
 
 function createPool() {
   const pool = new pg.Pool({
@@ -18,7 +18,7 @@ function createPool() {
     connectionTimeoutMillis: 10_000,
     // Bound runaway queries: a slow query must never hold a connection forever.
     statement_timeout: 15_000,
-    application_name: "shikor",
+    application_name: "peerlink",
   });
   pool.on("error", (err) => {
     console.error(JSON.stringify({ level: "error", msg: "pg pool error", err: err.message }));
@@ -27,19 +27,19 @@ function createPool() {
 }
 
 export function pool(): pg.Pool {
-  if (!globalForDb.__shikorPool) globalForDb.__shikorPool = createPool();
-  return globalForDb.__shikorPool;
+  if (!globalForDb.__peerlinkPool) globalForDb.__peerlinkPool = createPool();
+  return globalForDb.__peerlinkPool;
 }
 
 export function db(): Db {
-  if (!globalForDb.__shikorDb) globalForDb.__shikorDb = drizzle(pool(), { schema });
-  return globalForDb.__shikorDb;
+  if (!globalForDb.__peerlinkDb) globalForDb.__peerlinkDb = drizzle(pool(), { schema });
+  return globalForDb.__peerlinkDb;
 }
 
 export async function closeDb() {
-  await globalForDb.__shikorPool?.end();
-  globalForDb.__shikorPool = undefined;
-  globalForDb.__shikorDb = undefined;
+  await globalForDb.__peerlinkPool?.end();
+  globalForDb.__peerlinkPool = undefined;
+  globalForDb.__peerlinkDb = undefined;
 }
 
 export { schema };

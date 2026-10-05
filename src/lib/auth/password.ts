@@ -42,7 +42,7 @@ const COMMON = new Set(
     "abcdefghijklmnop",
     "letmeinletmein1",
     "welcome12345678",
-    "shikorshikor123",
+    "peerlinkpeerlink",
     "correcthorsebatterystaple",
   ].map((s) => s.toLowerCase()),
 );
@@ -119,7 +119,7 @@ export async function isBreachedPassword(password: string): Promise<boolean> {
   const suffix = sha1.slice(5);
   try {
     const res = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`, {
-      headers: { "Add-Padding": "true", "User-Agent": "shikor-password-check" },
+      headers: { "Add-Padding": "true", "User-Agent": "peerlink-password-check" },
       signal: AbortSignal.timeout(2500),
     });
     if (!res.ok) return false;
